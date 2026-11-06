@@ -9,38 +9,29 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <div><div class="brand">ALTITUDE <span>BIKE</span></div><small>GPS • ZONA LESTE / SP</small></div>
-  <button id="locateBtn" class="iconbtn" title="Minha localização" aria-label="Minha localização">◎</button>
-</header>
 <main>
-  <section class="map-wrap">
-    <div id="map" aria-label="Mapa interativo"></div>
-    <div class="map-tools">
-      <button id="heatBtn" class="tool active">🌡 Altitude</button>
-      <button id="layersBtn" class="tool">Camadas</button>
+  <!-- Mapa Fullscreen -->
+  <div id="map" aria-label="Mapa interativo"></div>
+
+  <!-- Janela Flutuante de Pesquisa -->
+  <section class="floating-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <strong style="color:var(--dark); font-size:16px;">ALTITUDE <span>BIKE</span></strong>
+      <button id="locateBtn" class="smallbtn" style="padding:6px 10px;" title="Minha localização" aria-label="Minha localização">📍 GPS</button>
     </div>
-    <div id="legend" class="legend">
-      <b>ALTITUDE</b><div class="gradient"></div>
-      <div class="legend-labels"><span>baixa</span><span>alta</span></div>
-    </div>
-    <div id="mapHint" class="map-hint">Toque no mapa para adicionar uma parada à rota</div>
-  </section>
-  <section class="panel">
     <div class="field">
       <label for="origin">PONTO A · ORIGEM</label>
       <div class="inputrow"><input id="origin" placeholder="Use minha localização ou toque no mapa"><button id="originHere" class="smallbtn">GPS</button></div>
     </div>
-    <div class="field">
+    <div class="field" style="margin-top:8px;">
       <label for="destination">PONTO B · DESTINO</label>
       <div class="inputrow"><input id="destination" placeholder="Digite um endereço ou local"><button id="pickDest" class="smallbtn">MAPA</button></div>
       <div id="suggestions" class="suggestions"></div>
     </div>
-    <div class="actions">
+    <div class="actions" style="margin-top:12px;">
       <button id="routeBtn" class="primary">CALCULAR ROTA</button>
       <button id="clearBtn" class="secondary">LIMPAR</button>
     </div>
@@ -51,12 +42,23 @@
       <div class="elev-grid"><div><small>SUA POSIÇÃO</small><strong id="currentElev">— m</strong></div><div><small>PONTO TOCADO</small><strong id="selectedElev">— m</strong></div></div>
       <div class="elev-diff"><small>DIFERENÇA</small><strong id="elevDiff">Toque em um ponto do mapa</strong></div>
     </div>
-    <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário. Toque novamente para remover o último ponto.</div>
+    <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
+
+  <!-- Botões de Controle Flutuantes -->
+  <div class="map-tools-floating">
+    <button id="heatBtn" class="tool-btn active">🌡 Altitude</button>
+    <button id="layersBtn" class="tool-btn">Camadas</button>
+  </div>
+
+  <!-- Legenda Flutuante -->
+  <div id="legend" class="legend-floating">
+    <b>ALTITUDE</b><div class="gradient"></div>
+    <div class="legend-labels"><span>baixa (722m)</span><span>alta (820m)</span></div>
+  </div>
 </main>
-<footer>Altitude Bike • Feito para uso pessoal • Dados © OpenStreetMap</footer>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script src="topo-layer.js"></script>
 <script src="app.js"></script>
 </body>

@@ -1,12 +1,7 @@
 const districts = ["Ermelino Matarazzo", "Penha", "Ponte Rasa", "Cangaíba", "Vila Jacuí"];
 
-// Limites geográficos restritos estritamente à região dos 5 distritos
-const zoneBounds = L.latLngBounds(
-  [-23.565, -46.560], // Sudoeste (Sul / Oeste)
-  [-23.460, -46.415]  // Nordeste (Norte / Leste)
-);
+const zoneBounds = L.latLngBounds([-23.565, -46.560], [-23.460, -46.415]);
 
-// Inicializa o mapa centralizado na região da Zona Leste escolhida
 const map = L.map('map', {
   zoomControl: true,
   maxBounds: zoneBounds,
@@ -20,12 +15,15 @@ const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
   maxZoom: 17,
   attribution: '© OpenTopoMap (CC-BY-SA)'
-}); 
+});
 
-let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null, elevationLayer = null, heatBusy = false;
+// Camada topográfica hipsométrica em tempo real
+const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.75 }).addTo(map);
+
+let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null;
 
 const $ = id => document.getElementById(id), status = t => $('status').textContent = t;
 
@@ -45,7 +43,7 @@ window.removeVia = i => { via.splice(i, 1); renderVia(); if (origin && destinati
 
 map.on('click', e => {
   if (!zoneBounds.contains(e.latlng)) {
-    status('Selecione um ponto dentro dos distritos de Ermelino Matarazzo, Penha, Ponte Rasa, Cangaíba ou Vila Jacuí.');
+    status('Selecione um ponto dentro dos distritos cobertos (ZL).');
     return;
   }
   queryElevation(e.latlng, true);
@@ -78,7 +76,7 @@ map.on('click', e => {
 });
 
 $('pickDest').onclick = () => { choosingDest = true; status('Toque no mapa para escolher o destino.'); };
-$('originHere').onclick = () => locate(true);
+if($('originHere')) $('originHere').onclick = () => locate(true);
 $('locateBtn').onclick = () => locate(true);
 
 function locate(setAsOrigin = false) {
@@ -87,7 +85,7 @@ function locate(setAsOrigin = false) {
   navigator.geolocation.getCurrentPosition(pos => {
     const p = L.latLng(pos.coords.latitude, pos.coords.longitude);
     if (!zoneBounds.contains(p)) {
-      status('Sua localização está fora da zona monitorada (Zona Leste - 5 distritos).');
+      status('Sua localização está fora da zona monitorada da Zona Leste.');
       return;
     }
     queryElevation(p, false);
@@ -182,25 +180,21 @@ async function calculateRoute() {
     map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
     const props = data.features[0].properties || {}, km = (props['track-length'] || props['total-distance'] || 0) / 1000;
     $('routeInfo').hidden = false;
-    $('routeInfo').innerHTML = `<b>Rota para bicicleta</b><br>Distância aproximada: <b>${km ? km.toFixed(2) + ' km' : 'consulte o traçado'}</b><br>Paradas intermediárias: ${via.length}<br><small>Toque em outra rua para inserir mais um ponto.</small>`;
-    status('Rota calculada. Confira o traçado antes de pedalar.');
-  } catch (e) { status('Não foi possível calcular: ' + e.message + '. Tente novamente.'); }
+    $('routeInfo').innerHTML = `<b>Rota para bicicleta</b><br>Distância aproximada: <b>${km ? km.toFixed(2) + ' km' : 'consulte o traçado'}</b><br>Paradas: ${via.length}`;
+    status('Rota calculada com sucesso.');
+  } catch (e) { status('Não foi possível calcular: ' + e.message); }
 }
 
 $('heatBtn').onclick = () => {
   heatOn = !heatOn;
   $('heatBtn').classList.toggle('active', heatOn);
-  if (heatOn) {
-    if (elevationLayer) elevationLayer.addTo(map);
-    else loadElevation();
-  } else if (elevationLayer) {
-    map.removeLayer(elevationLayer);
-  }
+  if (heatOn) map.addLayer(elevationLayer);
+  else map.removeLayer(elevationLayer);
 };
 
 $('layersBtn').onclick = () => {
-  if (map.hasLayer(topo)) { map.removeLayer(topo); street.addTo(map); }
-  else { map.removeLayer(street); topo.addTo(map); }
+  if (map.hasLayer(topoMap)) { map.removeLayer(topoMap); street.addTo(map); }
+  else { map.removeLayer(street); topoMap.addTo(map); }
 };
 
 async function getElevation(p) {
@@ -229,104 +223,13 @@ async function queryElevation(p, isSelected) {
     }
     updateElevationDifference();
   } catch (e) {
-    status('Não foi possível consultar a altitude agora.');
+    status('Não foi possível consultar a altitude no ponto.');
   }
 }
 
 function updateElevationDifference() {
   if (currentElevation === null || selectedElevation === null) return;
   const d = selectedElevation - currentElevation, s = d > 0 ? '+' : '';
-  $('elevDiff').textContent = s + d + ' m ' + (d > 0 ? 'acima da sua posição' : d < 0 ? 'abaixo da sua posição' : 'na mesma altitude');
+  $('elevDiff').textContent = s + d + ' m ' + (d > 0 ? 'acima' : d < 0 ? 'abaixo' : 'na mesma altitude');
   $('elevDiff').style.color = d > 0 ? '#b65b24' : d < 0 ? '#176b47' : '#52645a';
-}
-
-async function loadElevation() {
-  if (heatBusy) return;
-  heatBusy = true;
-  status('Carregando mapa térmico detalhado de altitude...');
-  
-  // Aumentado o número de linhas e colunas para maior resolução/nitidez no relevo
-  const b = zoneBounds, rows = 28, cols = 32, pts = [];
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const lat = b.getNorth() - (b.getNorth() - b.getSouth()) * y / (rows - 1);
-      const lon = b.getWest() + (b.getEast() - b.getWest()) * x / (cols - 1);
-      pts.push([lat, lon]);
-    }
-  }
-
-  try {
-    const vals = [];
-    for (let i = 0; i < pts.length; i += 100) {
-      if (i > 0) await new Promise(r => setTimeout(r, 1100));
-      const part = pts.slice(i, i + 100);
-      const loc = part.map(p => p[0] + ',' + p[1]).join('|');
-      const r = await fetch('https://api.opentopodata.org/v1/mapzen?locations=' + encodeURIComponent(loc));
-      if (!r.ok) throw Error('Limite/indisponibilidade da API');
-      const d = await r.json();
-      if (!d.results || d.results.length !== part.length) throw Error('Resposta incompleta da API');
-      vals.push(...d.results.map(x => x.elevation));
-    }
-    if (vals.some(v => v === null || v === undefined || !Number.isFinite(v))) throw Error('Amostras sem elevação');
-
-    // Intervalo fixo customizado solicitado: 700m a 850m
-    const min = 700, max = 850;
-    
-    const scale = 8, width = (cols - 1) * scale + 1, height = (rows - 1) * scale + 1;
-    const c = document.createElement('canvas');
-    c.width = width; c.height = height;
-    const ctx = c.getContext('2d');
-    const pixels = ctx.createImageData(width, height);
-    
-    // Gama de cores expandida e mais rica (estilo cartografia profissional / arco-íris suave)
-    const stops = [
-      [0.00, [10,  80, 160]], // Azul profundo (700m)
-      [0.20, [30, 160, 200]], // Ciano
-      [0.40, [50, 200, 100]], // Verde claro
-      [0.60, [220, 210, 40]], // Amarelo
-      [0.80, [240, 120, 30]], // Laranja
-      [1.00, [200,  30, 50]]  // Vermelho escuro/vinho (850m ou mais)
-    ];
-
-    for (let py = 0; py < height; py++) {
-      const gy = py / scale, y0 = Math.min(rows - 1, Math.floor(gy)), y1 = Math.min(rows - 1, y0 + 1), fy = gy - y0;
-      for (let px = 0; px < width; px++) {
-        const gx = px / scale, x0 = Math.min(cols - 1, Math.floor(gx)), x1 = Math.min(cols - 1, x0 + 1), fx = gx - x0;
-        const a = vals[y0 * cols + x0], bb = vals[y0 * cols + x1], cc = vals[y1 * cols + x0], dd = vals[y1 * cols + x1];
-        let elev = (a * (1 - fx) + bb * fx) * (1 - fy) + (cc * (1 - fx) + dd * fx) * fy;
-        
-        // Normaliza estritamente com base na faixa fixa [700, 850]
-        let t = (elev - min) / (max - min);
-        t = Math.max(0, Math.min(1, t)); // Trava os limites para não estourar as pontas
-
-        let k = 0; while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
-        const f = Math.max(0, Math.min(1, (t - stops[k][0]) / (stops[k + 1][0] - stops[k][0])));
-        const color = stops[k][1].map((v, i) => Math.round(v + (stops[k + 1][1][i] - v) * f));
-        
-        const index = (py * width + px) * 4;
-        pixels.data[index] = color[0];
-        pixels.data[index + 1] = color[1];
-        pixels.data[index + 2] = color[2];
-        pixels.data[index + 3] = 165; // Levemente mais opaco para destacar bem as cores
-      }
-    }
-    ctx.putImageData(pixels, 0, 0);
-
-    if (elevationLayer) map.removeLayer(elevationLayer);
-    elevationLayer = L.imageOverlay(c.toDataURL(), zoneBounds, { opacity: 0.85, interactive: false });
-    if (heatOn) elevationLayer.addTo(map);
-
-    $('legend').querySelector('b').textContent = `ALTITUDE 700–850 m`;
-    status(`Mapa térmico de alta definição carregado (Escala fixa: 700m–850m).`);
-  } catch (e) {
-    status('Mapa térmico indisponível no momento. Tente novamente.');
-  } finally {
-    heatBusy = false;
-  }
-}
-
-loadElevation();
-
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
