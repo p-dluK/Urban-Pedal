@@ -1,0 +1,34 @@
+# Altitude Bike GPS — primeira versão
+
+## O que já está incluído
+- Mapa centrado na região da Zona Leste de São Paulo.
+- Localização GPS do aparelho (com permissão).
+- Busca de destino por endereço.
+- Cálculo de uma rota de bicicleta por vez.
+- Toque no mapa para escolher origem/destino e inserir pontos intermediários.
+- Camada de referência de altitude por amostras do Open-Meteo.
+- Camada topográfica alternativa.
+- PWA instalável quando servido por HTTPS.
+
+## Como testar no Motorola
+1. Extraia o ZIP em um computador.
+2. Publique os arquivos em um serviço de hospedagem estática HTTPS (por exemplo, GitHub Pages ou Netlify).
+3. Abra o endereço HTTPS no Chrome do Motorola.
+4. Permita o acesso à localização.
+5. No menu do Chrome, escolha “Instalar app” ou “Adicionar à tela inicial”.
+
+Abrir `index.html` diretamente como arquivo não habilita todos os recursos de GPS/PWA. Para instalar como app, é necessário HTTPS.
+
+## Limitações desta versão
+- A rota usa o perfil `trekking` do BRouter como aproximação para bicicleta; nem todas as ruas, restrições ou condições reais estão garantidas.
+- A camada colorida é uma visualização aproximada de amostras de elevação, não um levantamento topográfico oficial nem um modelo de precisão cadastral. O OpenTopoMap pode ser usado como camada complementar.
+- O serviço público BRouter, Nominatim, OpenStreetMap e Open-Meteo pode ter limites, indisponibilidade ou políticas de uso. Para uso frequente, avalie hospedar serviços próprios ou contratar provedores.
+- GPS e recálculo de rota não substituem atenção ao trânsito. Confira o caminho antes de pedalar.
+- Esta primeira versão não oferece navegação por voz nem rastreamento em segundo plano garantido.
+
+## Serviços e atribuições
+- Mapa: © OpenStreetMap contributors
+- Camada topográfica: OpenTopoMap
+- Elevação: Open-Meteo
+- Geocodificação: Nominatim
+- Rotas: BRouter

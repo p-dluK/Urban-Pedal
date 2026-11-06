@@ -1,0 +1,17 @@
+{
+  "name": "Altitude Bike GPS",
+  "short_name": "Altitude Bike",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f1f5f2",
+  "theme_color": "#132b26",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

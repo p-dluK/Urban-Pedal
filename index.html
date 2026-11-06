@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#132b26">
+<meta name="description" content="GPS de bicicleta com mapa de altitude para a Zona Leste de São Paulo.">
+<title>Altitude Bike GPS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div><div class="brand">ALTITUDE <span>BIKE</span></div><small>GPS • ZONA LESTE / SP</small></div>
+  <button id="locateBtn" class="iconbtn" title="Minha localização" aria-label="Minha localização">◎</button>
+</header>
+<main>
+  <section class="map-wrap">
+    <div id="map" aria-label="Mapa interativo"></div>
+    <div class="map-tools">
+      <button id="heatBtn" class="tool active">🌡 Altitude</button>
+      <button id="layersBtn" class="tool">Camadas</button>
+    </div>
+    <div id="legend" class="legend">
+      <b>ALTITUDE</b><div class="gradient"></div>
+      <div class="legend-labels"><span>baixa</span><span>alta</span></div>
+    </div>
+    <div id="mapHint" class="map-hint">Toque no mapa para adicionar uma parada à rota</div>
+  </section>
+  <section class="panel">
+    <div class="field">
+      <label for="origin">PONTO A · ORIGEM</label>
+      <div class="inputrow"><input id="origin" placeholder="Use minha localização ou toque no mapa"><button id="originHere" class="smallbtn">GPS</button></div>
+    </div>
+    <div class="field">
+      <label for="destination">PONTO B · DESTINO</label>
+      <div class="inputrow"><input id="destination" placeholder="Digite um endereço ou local"><button id="pickDest" class="smallbtn">MAPA</button></div>
+      <div id="suggestions" class="suggestions"></div>
+    </div>
+    <div class="actions">
+      <button id="routeBtn" class="primary">CALCULAR ROTA</button>
+      <button id="clearBtn" class="secondary">LIMPAR</button>
+    </div>
+    <div id="status" class="status">Pronto. Defina origem e destino para começar.</div>
+    <div id="routeInfo" class="route-info" hidden></div>
+    <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário. Toque novamente para remover o último ponto.</div>
+  </section>
+</main>
+<footer>Altitude Bike • Feito para uso pessoal • Dados © OpenStreetMap</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
