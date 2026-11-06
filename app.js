@@ -44,7 +44,6 @@ function renderVia() {
 window.removeVia = i => { via.splice(i, 1); renderVia(); if (origin && destination) calculateRoute(); };
 
 map.on('click', e => {
-  // Garante que o clique está dentro da zona permitida
   if (!zoneBounds.contains(e.latlng)) {
     status('Selecione um ponto dentro dos distritos de Ermelino Matarazzo, Penha, Ponte Rasa, Cangaíba ou Vila Jacuí.');
     return;
@@ -125,7 +124,7 @@ $('destination').addEventListener('input', async e => {
     $('suggestions').innerHTML = '';
     results.forEach(x => {
       const p = L.latLng(+x.lat, +x.lon);
-      if (!zoneBounds.contains(p)) return; // Filtra apenas na região escolhida
+      if (!zoneBounds.contains(p)) return;
       const b = document.createElement('button');
       b.textContent = x.display_name;
       b.onclick = () => {
@@ -244,10 +243,10 @@ function updateElevationDifference() {
 async function loadElevation() {
   if (heatBusy) return;
   heatBusy = true;
-  status('Carregando mapa térmico de altitude (Ermelino Matarazzo, Penha, Ponte Rasa, Cangaíba, Vila Jacuí)...');
+  status('Carregando mapa térmico detalhado de altitude...');
   
-  // Utiliza fixamente a área combinada dos 5 distritos para manter consistência e alta performance
-  const b = zoneBounds, rows = 20, cols = 24, pts = [];
+  // Aumentado o número de linhas e colunas para maior resolução/nitidez no relevo
+  const b = zoneBounds, rows = 28, cols = 32, pts = [];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const lat = b.getNorth() - (b.getNorth() - b.getSouth()) * y / (rows - 1);
@@ -270,20 +269,23 @@ async function loadElevation() {
     }
     if (vals.some(v => v === null || v === undefined || !Number.isFinite(v))) throw Error('Amostras sem elevação');
 
-    const min = Math.min(...vals), max = Math.max(...vals);
+    // Intervalo fixo customizado solicitado: 700m a 850m
+    const min = 700, max = 850;
+    
     const scale = 8, width = (cols - 1) * scale + 1, height = (rows - 1) * scale + 1;
     const c = document.createElement('canvas');
     c.width = width; c.height = height;
     const ctx = c.getContext('2d');
     const pixels = ctx.createImageData(width, height);
     
-    // Gradiente térmico (estilo TessaDEM / Spectral)
+    // Gama de cores expandida e mais rica (estilo cartografia profissional / arco-íris suave)
     const stops = [
-      [0.00, [35, 190, 105]],
-      [0.25, [165, 211, 66]],
-      [0.50, [242, 211, 65]],
-      [0.75, [247, 139, 57]],
-      [1.00, [218, 65, 83]]
+      [0.00, [10,  80, 160]], // Azul profundo (700m)
+      [0.20, [30, 160, 200]], // Ciano
+      [0.40, [50, 200, 100]], // Verde claro
+      [0.60, [220, 210, 40]], // Amarelo
+      [0.80, [240, 120, 30]], // Laranja
+      [1.00, [200,  30, 50]]  // Vermelho escuro/vinho (850m ou mais)
     ];
 
     for (let py = 0; py < height; py++) {
@@ -291,26 +293,31 @@ async function loadElevation() {
       for (let px = 0; px < width; px++) {
         const gx = px / scale, x0 = Math.min(cols - 1, Math.floor(gx)), x1 = Math.min(cols - 1, x0 + 1), fx = gx - x0;
         const a = vals[y0 * cols + x0], bb = vals[y0 * cols + x1], cc = vals[y1 * cols + x0], dd = vals[y1 * cols + x1];
-        const elev = (a * (1 - fx) + bb * fx) * (1 - fy) + (cc * (1 - fx) + dd * fx) * fy;
-        const t = (elev - min) / (max - min || 1);
+        let elev = (a * (1 - fx) + bb * fx) * (1 - fy) + (cc * (1 - fx) + dd * fx) * fy;
+        
+        // Normaliza estritamente com base na faixa fixa [700, 850]
+        let t = (elev - min) / (max - min);
+        t = Math.max(0, Math.min(1, t)); // Trava os limites para não estourar as pontas
+
         let k = 0; while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
         const f = Math.max(0, Math.min(1, (t - stops[k][0]) / (stops[k + 1][0] - stops[k][0])));
         const color = stops[k][1].map((v, i) => Math.round(v + (stops[k + 1][1][i] - v) * f));
+        
         const index = (py * width + px) * 4;
         pixels.data[index] = color[0];
         pixels.data[index + 1] = color[1];
         pixels.data[index + 2] = color[2];
-        pixels.data[index + 3] = 142;
+        pixels.data[index + 3] = 165; // Levemente mais opaco para destacar bem as cores
       }
     }
     ctx.putImageData(pixels, 0, 0);
 
     if (elevationLayer) map.removeLayer(elevationLayer);
-    elevationLayer = L.imageOverlay(c.toDataURL(), zoneBounds, { opacity: .82, interactive: false });
+    elevationLayer = L.imageOverlay(c.toDataURL(), zoneBounds, { opacity: 0.85, interactive: false });
     if (heatOn) elevationLayer.addTo(map);
 
-    $('legend').querySelector('b').textContent = `ALTITUDE ${Math.round(min)}–${Math.round(max)} m`;
-    status(`Mapa térmico carregado (${Math.round(min)}m a ${Math.round(max)}m) para os distritos.`);
+    $('legend').querySelector('b').textContent = `ALTITUDE 700–850 m`;
+    status(`Mapa térmico de alta definição carregado (Escala fixa: 700m–850m).`);
   } catch (e) {
     status('Mapa térmico indisponível no momento. Tente novamente.');
   } finally {
@@ -318,7 +325,6 @@ async function loadElevation() {
   }
 }
 
-// Carrega o mapa térmico automaticamente ao iniciar na região especificada
 loadElevation();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
