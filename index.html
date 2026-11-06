@@ -9,83 +9,54 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<!-- Mapa em Tela Cheia -->
-<div id="map" aria-label="Mapa interativo"></div>
-
-<!-- Controles Flutuantes Superiores -->
-<div class="floating-controls">
-  <button id="searchToggleBtn" class="float-btn" title="Buscar Endereço / Rota">🔍 Buscar</button>
-  <button id="heatBtn" class="float-btn active" title="Mapa Térmico Topográfico">🌡 Altitude</button>
-  <button id="layersBtn" class="float-btn" title="Alternar Camadas">🗺 Camadas</button>
-  <button id="locateBtn" class="float-btn" title="Minha Localização GPS">◎ GPS</button>
-</div>
-
-<!-- Legenda Flutuante -->
-<div id="legend" class="legend">
-  <b>ALTITUDE 700–850 m</b>
-  <div id="legendGradient" class="gradient"></div>
-  <div class="legend-labels">
-    <span>700m</span>
-    <span>775m</span>
-    <span>850m</span>
-  </div>
-</div>
-
-<!-- Janela Flutuante (Modal) de Pesquisa e Rotas -->
-<div id="searchModal" class="modal-overlay hidden">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3>Planeador de Rota & Pesquisa</h3>
-      <button id="closeModalBtn" class="close-btn">&times;</button>
+<header class="topbar">
+  <div><div class="brand">ALTITUDE <span>BIKE</span></div><small>GPS • ZONA LESTE / SP</small></div>
+  <button id="locateBtn" class="iconbtn" title="Minha localização" aria-label="Minha localização">◎</button>
+</header>
+<main>
+  <section class="map-wrap">
+    <div id="map" aria-label="Mapa interativo"></div>
+    <div class="map-tools">
+      <button id="heatBtn" class="tool active">🌡 Altitude</button>
+      <button id="layersBtn" class="tool">Camadas</button>
     </div>
-    <div class="modal-body">
-      <div class="field">
-        <label for="origin">PONTO A · ORIGEM</label>
-        <div class="inputrow">
-          <input id="origin" placeholder="Use minha localização ou toque no mapa">
-          <button id="originHere" class="smallbtn">GPS</button>
-        </div>
-      </div>
-      <div class="field">
-        <label for="destination">PONTO B · DESTINO</label>
-        <div class="inputrow">
-          <input id="destination" placeholder="Digite um endereço ou local">
-          <button id="pickDest" class="smallbtn">MAPA</button>
-        </div>
-        <div id="suggestions" class="suggestions"></div>
-      </div>
-      <div class="actions">
-        <button id="routeBtn" class="primary">CALCULAR ROTA</button>
-        <button id="clearBtn" class="secondary">LIMPAR</button>
-      </div>
+    <div id="legend" class="legend">
+      <b>ALTITUDE</b><div class="gradient"></div>
+      <div class="legend-labels"><span>baixa</span><span>alta</span></div>
     </div>
-  </div>
-</div>
-
-<!-- Painel Flutuante Inferior (Status e Comparador de Altitude) -->
-<div class="floating-info-wrap">
-  <div id="status" class="status-toast">Toque em um ponto do mapa para consultar a altitude.</div>
-  <div id="routeInfo" class="info-card" hidden></div>
-  <div id="elevationInfo" class="info-card" hidden>
-    <div class="elev-head">
-      <b>COMPARADOR DE ALTITUDE</b>
-      <span id="elevSource">Mapzen</span>
+    <div id="mapHint" class="map-hint">Toque no mapa para adicionar uma parada à rota</div>
+  </section>
+  <section class="panel">
+    <div class="field">
+      <label for="origin">PONTO A · ORIGEM</label>
+      <div class="inputrow"><input id="origin" placeholder="Use minha localização ou toque no mapa"><button id="originHere" class="smallbtn">GPS</button></div>
     </div>
-    <div class="elev-grid">
-      <div><small>SUA POSIÇÃO</small><strong id="currentElev">— m</strong></div>
-      <div><small>PONTO TOCADO</small><strong id="selectedElev">— m</strong></div>
+    <div class="field">
+      <label for="destination">PONTO B · DESTINO</label>
+      <div class="inputrow"><input id="destination" placeholder="Digite um endereço ou local"><button id="pickDest" class="smallbtn">MAPA</button></div>
+      <div id="suggestions" class="suggestions"></div>
     </div>
-    <div class="elev-diff">
-      <small>DIFERENÇA</small><strong id="elevDiff">Toque em um ponto do mapa</strong>
+    <div class="actions">
+      <button id="routeBtn" class="primary">CALCULAR ROTA</button>
+      <button id="clearBtn" class="secondary">LIMPAR</button>
     </div>
-  </div>
-</div>
-
+    <div id="status" class="status">Pronto. Defina origem e destino para começar.</div>
+    <div id="routeInfo" class="route-info" hidden></div>
+    <div id="elevationInfo" class="elevation-card" hidden>
+      <div class="elev-head"><b>COMPARADOR DE ALTITUDE</b><span id="elevSource">Mapzen / OpenTopoData</span></div>
+      <div class="elev-grid"><div><small>SUA POSIÇÃO</small><strong id="currentElev">— m</strong></div><div><small>PONTO TOCADO</small><strong id="selectedElev">— m</strong></div></div>
+      <div class="elev-diff"><small>DIFERENÇA</small><strong id="elevDiff">Toque em um ponto do mapa</strong></div>
+    </div>
+    <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário. Toque novamente para remover o último ponto.</div>
+  </section>
+</main>
+<footer>Altitude Bike • Feito para uso pessoal • Dados © OpenStreetMap</footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script src="topo-layer.js"></script>
 <script src="app.js"></script>
 </body>
