@@ -32,3 +32,12 @@ Abrir `index.html` diretamente como arquivo não habilita todos os recursos de G
 - Elevação: Open-Meteo
 - Geocodificação: Nominatim
 - Rotas: BRouter
+
+
+## Versão 2.0 — comparador de altitude
+- Consulta altitude no ponto tocado e compara com a altitude da localização GPS.
+- Exibe diferença positiva (acima) ou negativa (abaixo).
+- Camada térmica com amostras do dataset Mapzen via OpenTopoData (resolução nominal aproximada de 30 m).
+- A grade é uma visualização de referência; não representa levantamento topográfico de rua/lote.
+- API pública tem limites de uso e pode ficar indisponível.
+- Modelo de elevação global não é um levantamento recente das ruas.
