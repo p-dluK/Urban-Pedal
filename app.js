@@ -8,14 +8,13 @@ const zoneBounds = L.latLngBounds(
 
 // Inicializa o mapa ocupando a tela inteira
 const map = L.map('map', {
-  zoomControl: false, // Otimizado para navegação mobile limpa
+  zoomControl: false,
   maxBounds: zoneBounds,
   maxBoundsViscosity: 0.8,
   minZoom: 12,
   maxZoom: 18
 }).setView([-23.512, -46.480], 13);
 
-// Adiciona os botões de zoom no canto inferior direito
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -218,9 +217,22 @@ $('layersBtn').onclick = () => {
 async function getElevation(p) {
   const key = p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
   if (elevationCache.has(key)) return elevationCache.get(key);
-  const r = await fetch('https://api.opentopodata.org/v1/mapzen?locations=' + encodeURIComponent(key));
-  if (!r.ok) throw Error('Fonte topográfica indisponível');
-  const d = await r.json(), v = d.results?.[0]?.elevation;
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${p.lat}&longitude=${p.lng}`);
+    if (r.ok) {
+      const d = await r.json();
+      if (d.elevation && d.elevation.length > 0) {
+        const val = Math.round(d.elevation[0]);
+        elevationCache.set(key, val);
+        return val;
+      }
+    }
+  } catch (_) {}
+  
+  // Fallback para opentopodata se open-meteo falhar
+  const r2 = await fetch('https://api.opentopodata.org/v1/mapzen?locations=' + encodeURIComponent(key));
+  if (!r2.ok) throw Error('Fonte topográfica indisponível');
+  const d2 = await r2.json(), v = d2.results?.[0]?.elevation;
   if (v === null || v === undefined) throw Error('Sem dado de altitude');
   elevationCache.set(key, Math.round(v));
   return Math.round(v);
@@ -252,13 +264,44 @@ function updateElevationDifference() {
   $('elevDiff').style.color = d > 0 ? '#b65b24' : d < 0 ? '#176b47' : '#52645a';
 }
 
+async function fetchElevationsBatch(pts) {
+  // Chamada via Open-Meteo API (rápida, sem rate-limit estrito e em 1 só pacote)
+  try {
+    const lats = pts.map(p => p[0].toFixed(5)).join(',');
+    const lons = pts.map(p => p[1].toFixed(5)).join(',');
+    const url = `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`;
+    const r = await fetch(url);
+    if (r.ok) {
+      const data = await r.json();
+      if (data && data.elevation && data.elevation.length === pts.length) {
+        return data.elevation;
+      }
+    }
+  } catch (err) {
+    console.warn("Open-Meteo falhou, tentando OpenTopoData fallback...", err);
+  }
+
+  // Fallback OpenTopoData com delay de segurança
+  const vals = [];
+  for (let i = 0; i < pts.length; i += 50) {
+    if (i > 0) await new Promise(r => setTimeout(r, 1200));
+    const part = pts.slice(i, i + 50);
+    const loc = part.map(p => p[0].toFixed(5) + ',' + p[1].toFixed(5)).join('|');
+    const r = await fetch('https://api.opentopodata.org/v1/mapzen?locations=' + encodeURIComponent(loc));
+    if (!r.ok) throw Error('Limite de requisições da API ativado. Tente novamente em instantes.');
+    const d = await r.json();
+    if (!d.results || d.results.length !== part.length) throw Error('Resposta incompleta da API');
+    vals.push(...d.results.map(x => x.elevation));
+  }
+  return vals;
+}
+
 async function loadElevation() {
   if (heatBusy) return;
   heatBusy = true;
   status('Carregando mapa térmico de altitude...');
   
-  // Alta resolução de amostragem
-  const b = zoneBounds, rows = 28, cols = 32, pts = [];
+  const b = zoneBounds, rows = 22, cols = 26, pts = [];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const lat = b.getNorth() - (b.getNorth() - b.getSouth()) * y / (rows - 1);
@@ -268,20 +311,11 @@ async function loadElevation() {
   }
 
   try {
-    const vals = [];
-    for (let i = 0; i < pts.length; i += 100) {
-      if (i > 0) await new Promise(r => setTimeout(r, 1100));
-      const part = pts.slice(i, i + 100);
-      const loc = part.map(p => p[0] + ',' + p[1]).join('|');
-      const r = await fetch('https://api.opentopodata.org/v1/mapzen?locations=' + encodeURIComponent(loc));
-      if (!r.ok) throw Error('Limite/indisponibilidade da API');
-      const d = await r.json();
-      if (!d.results || d.results.length !== part.length) throw Error('Resposta incompleta da API');
-      vals.push(...d.results.map(x => x.elevation));
+    const vals = await fetchElevationsBatch(pts);
+    if (!vals || vals.some(v => v === null || v === undefined || !Number.isFinite(v))) {
+      throw Error('Amostras de elevação inválidas');
     }
-    if (vals.some(v => v === null || v === undefined || !Number.isFinite(v))) throw Error('Amostras sem elevação');
 
-    // Intervalo de altitude ajustado: 700m a 850m
     const min = 700, max = 850;
     
     const scale = 8, width = (cols - 1) * scale + 1, height = (rows - 1) * scale + 1;
@@ -290,14 +324,13 @@ async function loadElevation() {
     const ctx = c.getContext('2d');
     const pixels = ctx.createImageData(width, height);
     
-    // Gama de cores ajustada e vívida (Azul -> Ciano -> Verde -> Amarelo -> Laranja -> Vermelho)
     const stops = [
-      [0.00, [10,  80, 160]], // Azul
+      [0.00, [10,  80, 160]], // Azul (700m)
       [0.20, [30, 160, 200]], // Ciano
       [0.40, [50, 200, 100]], // Verde
       [0.60, [220, 210, 40]], // Amarelo
       [0.80, [240, 120, 30]], // Laranja
-      [1.00, [200,  30, 50]]  // Vermelho
+      [1.00, [200,  30, 50]]  // Vermelho (850m+)
     ];
 
     for (let py = 0; py < height; py++) {
@@ -318,7 +351,7 @@ async function loadElevation() {
         pixels.data[index] = color[0];
         pixels.data[index + 1] = color[1];
         pixels.data[index + 2] = color[2];
-        pixels.data[index + 3] = 175; // Nitidez reforçada
+        pixels.data[index + 3] = 175;
       }
     }
     ctx.putImageData(pixels, 0, 0);
@@ -329,7 +362,8 @@ async function loadElevation() {
 
     status(`Mapa térmico de altitude ativo (700m a 850m).`);
   } catch (e) {
-    status('Mapa térmico indisponível no momento.');
+    console.error(e);
+    status('Erro ao carregar altitude: ' + (e.message || 'Servidor indisponível no momento.'));
   } finally {
     heatBusy = false;
   }
