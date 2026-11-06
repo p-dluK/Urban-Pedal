@@ -2,7 +2,9 @@ const districts = ["Ermelino Matarazzo","Penha","Ponte Rasa","Cangaíba","Vila J
 const map = L.map('map',{zoomControl:true}).setView([-23.505,-46.49],13);
 const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
 const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenTopoMap (CC-BY-SA)'}); 
-let heatOn=true, origin=null, destination=null, currentElevation=null, selectedElevation=null, selectedPointMarker=null, elevationCache=new Map(), routeLine=null, userMarker=null, originMarker=null, destMarker=null, via=[], viaMarkers=[], choosingDest=false, watchId=null, elevationLayer=null, heatBusy=false;
+const HEAT_RANGE=[722,820];
+const heat=L.topoLayer({range:HEAT_RANGE,opacity:.8,zIndex:5});
+let heatOn=true, origin=null, destination=null, currentElevation=null, selectedElevation=null, selectedPointMarker=null, elevationCache=new Map(), routeLine=null, userMarker=null, originMarker=null, destMarker=null, via=[], viaMarkers=[], choosingDest=false, watchId=null;
 const $=id=>document.getElementById(id), status=t=>$('status').textContent=t;
 const zone = L.latLngBounds([-23.56,-46.55],[-23.44,-46.42]);
 const setMarker=(old,p,label,color)=>{if(old)map.removeLayer(old);return L.circleMarker(p,{radius:8,color:'#fff',weight:2,fillColor:color,fillOpacity:1}).addTo(map).bindPopup(label)};
@@ -61,7 +63,7 @@ async function calculateRoute(){
   status('Rota calculada. Confira o traçado antes de pedalar.');
  }catch(e){status('Não foi possível calcular: '+e.message+'. Tente novamente.')}
 }
-$('heatBtn').onclick=()=>{heatOn=!heatOn;$('heatBtn').classList.toggle('active',heatOn);if(heatOn){if(elevationLayer)elevationLayer.addTo(map);else loadElevation()}else if(elevationLayer)map.removeLayer(elevationLayer)};
+$('heatBtn').onclick=()=>{heatOn=!heatOn;$('heatBtn').classList.toggle('active',heatOn);if(heatOn)heat.addTo(map);else map.removeLayer(heat)};
 $('layersBtn').onclick=()=>{if(map.hasLayer(topo)){map.removeLayer(topo);street.addTo(map)}else{map.removeLayer(street);topo.addTo(map)}};
 async function getElevation(p){
  const key=p.lat.toFixed(5)+','+p.lng.toFixed(5);if(elevationCache.has(key))return elevationCache.get(key);
@@ -70,76 +72,8 @@ async function getElevation(p){
 }
 async function queryElevation(p,isSelected){try{const v=await getElevation(p);if(isSelected){selectedElevation=v;selectedPointMarker=setMarker(selectedPointMarker,p,`Ponto selecionado: ${v} m`,'#e3a52d');$('elevationInfo').hidden=false;$('selectedElev').textContent=v+' m'}else{currentElevation=v;$('elevationInfo').hidden=false;$('currentElev').textContent=v+' m'}updateElevationDifference()}catch(e){status('Não foi possível consultar a altitude agora. Tente novamente em alguns segundos.')}}
 function updateElevationDifference(){if(currentElevation===null||selectedElevation===null)return;const d=selectedElevation-currentElevation,s=d>0?'+':'';$('elevDiff').textContent=s+d+' m '+(d>0?'acima da sua posição':d<0?'abaixo da sua posição':'na mesma altitude');$('elevDiff').style.color=d>0?'#b65b24':d<0?'#176b47':'#52645a'}
-async function loadElevation(){
- if(heatBusy)return;
- heatBusy=true;
- status('Atualizando mapa térmico com dados de altitude...');
- const b=map.getBounds(), rows=18, cols=22, pts=[];
- // A primeira linha representa o norte do mapa, evitando inverter a imagem.
- for(let y=0;y<rows;y++){
-  for(let x=0;x<cols;x++){
-   const lat=b.getNorth()-(b.getNorth()-b.getSouth())*y/(rows-1);
-   const lon=b.getWest()+(b.getEast()-b.getWest())*x/(cols-1);
-   pts.push([lat,lon]);
-  }
- }
- try{
-  const vals=[];
-  for(let i=0;i<pts.length;i+=100){
-   if(i>0)await new Promise(r=>setTimeout(r,1100));
-   const part=pts.slice(i,i+100);
-   const loc=part.map(p=>p[0]+','+p[1]).join('|');
-   const r=await fetch('https://api.opentopodata.org/v1/mapzen?locations='+encodeURIComponent(loc));
-   if(!r.ok)throw Error('Limite/indisponibilidade da API');
-   const d=await r.json();
-   if(!d.results||d.results.length!==part.length)throw Error('Resposta incompleta da API');
-   vals.push(...d.results.map(x=>x.elevation));
-  }
-  if(vals.some(v=>v===null||v===undefined||!Number.isFinite(v)))throw Error('Amostras sem elevação');
-
-  const min=Math.min(...vals), max=Math.max(...vals);
-  const scale=8, width=(cols-1)*scale+1, height=(rows-1)*scale+1;
-  const c=document.createElement('canvas');
-  c.width=width;c.height=height;
-  const ctx=c.getContext('2d');
-  const pixels=ctx.createImageData(width,height);
-  const stops=[
-   [0.00,[35,190,105]],
-   [0.25,[165,211,66]],
-   [0.50,[242,211,65]],
-   [0.75,[247,139,57]],
-   [1.00,[218,65,83]]
-  ];
-  for(let py=0;py<height;py++){
-   const gy=py/scale, y0=Math.min(rows-1,Math.floor(gy)), y1=Math.min(rows-1,y0+1), fy=gy-y0;
-   for(let px=0;px<width;px++){
-    const gx=px/scale, x0=Math.min(cols-1,Math.floor(gx)), x1=Math.min(cols-1,x0+1), fx=gx-x0;
-    const a=vals[y0*cols+x0], bb=vals[y0*cols+x1], cc=vals[y1*cols+x0], dd=vals[y1*cols+x1];
-    const elev=(a*(1-fx)+bb*fx)*(1-fy)+(cc*(1-fx)+dd*fx)*fy;
-    const t=(elev-min)/(max-min||1);
-    let k=0;while(k<stops.length-2&&t>stops[k+1][0])k++;
-    const f=Math.max(0,Math.min(1,(t-stops[k][0])/(stops[k+1][0]-stops[k][0])));
-    const color=stops[k][1].map((v,i)=>Math.round(v+(stops[k+1][1][i]-v)*f));
-    const index=(py*width+px)*4;
-    pixels.data[index]=color[0];
-    pixels.data[index+1]=color[1];
-    pixels.data[index+2]=color[2];
-    pixels.data[index+3]=142;
-   }
-  }
-  ctx.putImageData(pixels,0,0);
-  const bounds=L.latLngBounds([b.getSouth(),b.getWest()],[b.getNorth(),b.getEast()]);
-  if(elevationLayer)map.removeLayer(elevationLayer);
-  elevationLayer=L.imageOverlay(c.toDataURL(),bounds,{opacity:.82,interactive:false});
-  if(heatOn)elevationLayer.addTo(map);
-  $('legend').querySelector('b').textContent=`ALTITUDE ${Math.round(min)}–${Math.round(max)} m`;
-  status(`Mapa de altitude atualizado: ${Math.round(min)}–${Math.round(max)} m. Fonte: Mapzen.`);
- }catch(e){
-  status('Mapa térmico indisponível no momento. Tente novamente ou use a camada topográfica.');
- }finally{
-  heatBusy=false;
- }
-}
-let heatTimer=null;map.on('moveend',()=>{if(heatOn){clearTimeout(heatTimer);heatTimer=setTimeout(loadElevation,900)}});
-loadElevation();
+// Camada topográfica (tint hipsométrico + curvas de nível + relevo), veja topo-layer.js
+if(heatOn)heat.addTo(map);
+$('legend').querySelector('.gradient').style.background=heat.legendGradient();
+$('legend').querySelector('b').textContent=`ALTITUDE ${HEAT_RANGE[0]}–${HEAT_RANGE[1]} m`;
 if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});

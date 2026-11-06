@@ -1,0 +1,157 @@
+/* topo-layer.js
+ * Camada topográfica para Leaflet, no estilo do topographic-map.com:
+ * cores hipsométricas (verde -> amarelo -> laranja -> marrom),
+ * curvas de nível (linha mestra a cada 5 curvas) e relevo sombreado.
+ *
+ * Dados: tiles Terrarium (AWS Open Data, base SRTM). Não precisa de chave de API.
+ *
+ * Uso:
+ *   const topo = L.topoLayer({ range: [722, 820], opacity: 0.75 });
+ *   topo.addTo(map);            // liga
+ *   map.removeLayer(topo);      // desliga
+ *   topo.setRange(700, 830);    // muda a escala de cores
+ *   barra.style.background = topo.legendGradient();  // legenda "baixa -> alta"
+ */
+(function () {
+  // Paleta: [posição 0..1, [r, g, b]]
+  const STOPS = [
+    [0.00, [76, 153, 86]],
+    [0.25, [165, 200, 110]],
+    [0.50, [240, 228, 140]],
+    [0.75, [228, 170, 90]],
+    [1.00, [168, 104, 64]],
+  ];
+  const LINE = [110, 70, 40];
+
+  function ramp(t) {
+    t = Math.min(1, Math.max(0, t));
+    for (let i = 1; i < STOPS.length; i++) {
+      if (t <= STOPS[i][0]) {
+        const [t0, c0] = STOPS[i - 1], [t1, c1] = STOPS[i];
+        const k = (t - t0) / (t1 - t0);
+        return [c0[0] + (c1[0] - c0[0]) * k, c0[1] + (c1[1] - c0[1]) * k, c0[2] + (c1[2] - c0[2]) * k];
+      }
+    }
+    return STOPS[STOPS.length - 1][1].slice();
+  }
+
+  // Equidistância das curvas (metros) conforme o zoom
+  function contourStep(z) { return z >= 14 ? 5 : z >= 13 ? 10 : z >= 11 ? 25 : 50; }
+
+  // Suavização (box blur separável) para as curvas não ficarem serrilhadas
+  function blur(a, W, H, r) {
+    const t = new Float32Array(a.length), o = new Float32Array(a.length), n = 2 * r + 1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) s += a[y * W + Math.min(W - 1, Math.max(0, x + k))];
+      t[y * W + x] = s / n;
+    }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) s += t[Math.min(H - 1, Math.max(0, y + k)) * W + x];
+      o[y * W + x] = s / n;
+    }
+    return o;
+  }
+
+  // Deixa as cores se misturarem ao mapa de ruas (mantém nomes e vias visíveis)
+  const style = document.createElement('style');
+  style.textContent = '.topo-layer{mix-blend-mode:multiply}';
+  document.head.appendChild(style);
+
+  L.TopoLayer = L.GridLayer.extend({
+    options: {
+      range: [722, 820],   // metros: abaixo/acima disso fica na cor do extremo
+      tileSize: 256,
+      maxNativeZoom: 14,   // acima disso o tile é apenas ampliado
+      noWrap: true,
+      opacity: 0.75,
+      shade: 4,            // exagero do relevo sombreado (0 desliga)
+      contours: true,
+      className: 'topo-layer',
+      attribution: 'Elevação: Terrarium / AWS (SRTM)',
+    },
+
+    setRange(min, max) { this.options.range = [min, max]; this.redraw(); },
+
+    legendGradient() {
+      const parts = STOPS.map(([t, c]) => `rgb(${c.join(',')}) ${t * 100}%`);
+      return `linear-gradient(90deg, ${parts.join(', ')})`;
+    },
+
+    createTile(coords, done) {
+      const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+      const size = this.getTileSize();
+      tile.width = size.x;
+      tile.height = size.y;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try { this._paint(tile, img, coords); done(null, tile); }
+        catch (err) { done(err, tile); }
+      };
+      img.onerror = () => done(null, tile);
+      img.src = `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${coords.z}/${coords.x}/${coords.y}.png`;
+      return tile;
+    },
+
+    _paint(canvas, img, coords) {
+      const W = canvas.width, H = canvas.height, ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, W, H);
+      const d = ctx.getImageData(0, 0, W, H).data;
+
+      // Terrarium: elevação (m) = R*256 + G + B/256 - 32768
+      let e = new Float32Array(W * H);
+      for (let i = 0; i < W * H; i++) e[i] = d[i * 4] * 256 + d[i * 4 + 1] + d[i * 4 + 2] / 256 - 32768;
+      e = blur(e, W, H, 2);
+
+      const [lo, hi] = this.options.range;
+      const step = contourStep(coords.z);
+      const k = this.options.shade;
+
+      // Metros por pixel na latitude do tile (para calcular a inclinação)
+      const n = Math.PI - 2 * Math.PI * (coords.y + 0.5) / Math.pow(2, coords.z);
+      const res = 156543.03392 * Math.cos(Math.atan(Math.sinh(n))) / Math.pow(2, coords.z);
+
+      const at = (x, y) => e[Math.min(H - 1, Math.max(0, y)) * W + Math.min(W - 1, Math.max(0, x))];
+      const out = ctx.createImageData(W, H), o = out.data;
+
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const z0 = e[y * W + x];
+          let [r, g, b] = ramp((z0 - lo) / (hi - lo));
+
+          // Relevo sombreado, luz vindo do noroeste
+          if (k > 0) {
+            const dx = (at(x + 1, y) - at(x - 1, y)) / (2 * res);
+            const dy = (at(x, y + 1) - at(x, y - 1)) / (2 * res);
+            const len = Math.sqrt(1 + k * k * (dx * dx + dy * dy));
+            const dot = (-k * dx * -0.5 + -k * dy * -0.5 + 0.7071) / len;
+            const sh = Math.min(1.25, Math.max(0.6, dot / 0.7071));
+            r *= sh; g *= sh; b *= sh;
+          }
+
+          // Curvas de nível
+          if (this.options.contours) {
+            const c0 = Math.floor(z0 / step);
+            const c1 = Math.floor(at(x + 1, y) / step);
+            const c2 = Math.floor(at(x, y + 1) / step);
+            if (c0 !== c1 || c0 !== c2) {
+              const cn = Math.max(c0, c1, c2);
+              const a = cn % 5 === 0 ? 0.65 : 0.35; // linha mestra mais forte
+              r = r * (1 - a) + LINE[0] * a;
+              g = g * (1 - a) + LINE[1] * a;
+              b = b * (1 - a) + LINE[2] * a;
+            }
+          }
+
+          const i = (y * W + x) * 4;
+          o[i] = r; o[i + 1] = g; o[i + 2] = b; o[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(out, 0, 0);
+    },
+  });
+
+  L.topoLayer = (opts) => new L.TopoLayer(opts);
+})();

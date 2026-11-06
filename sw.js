@@ -1,5 +1,5 @@
-const CACHE='altitude-bike-v2';
-const CORE=['./','./index.html','./style.css','./app.js','./manifest.webmanifest','./icon.svg'];
+const CACHE='altitude-bike-v3';
+const CORE=['./','./index.html','./style.css','./app.js','./topo-layer.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE))));
 self.addEventListener('activate',e=>e.waitUntil((async()=>{
   const keys=await caches.keys();

@@ -41,3 +41,11 @@ Abrir `index.html` diretamente como arquivo não habilita todos os recursos de G
 - A grade é uma visualização de referência; não representa levantamento topográfico de rua/lote.
 - API pública tem limites de uso e pode ficar indisponível.
 - Modelo de elevação global não é um levantamento recente das ruas.
+
+
+## Versão 3.0 — mapa de altitude no padrão topográfico
+- A camada "Altitude" agora usa topo-layer.js: cores hipsométricas (verde -> marrom), curvas de nível (5 m no zoom alto, linha mestra a cada 25 m) e relevo sombreado.
+- Dados: tiles Terrarium (AWS, base SRTM ~30 m). Não depende mais do OpenTopoData para desenhar o mapa, então não há limite de 100 pontos nem espera entre consultas.
+- A escala de cores é fixa (722–820 m). Para mudar, edite HEAT_RANGE em app.js.
+- O comparador de altitude (ponto tocado x GPS) continua usando OpenTopoData/Mapzen.
+- Ao publicar, envie também topo-layer.js. O cache do app foi renovado (altitude-bike-v3).
