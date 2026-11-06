@@ -6,7 +6,7 @@ const zoneBounds = L.latLngBounds(
   [-23.460, -46.415]  // Nordeste (Norte / Leste)
 );
 
-// Inicializa o mapa ocupando 100% da tela
+// Inicializa o mapa em Tela Cheia
 const map = L.map('map', {
   zoomControl: false,
   maxBounds: zoneBounds,
@@ -15,24 +15,28 @@ const map = L.map('map', {
   maxZoom: 18
 }).setView([-23.512, -46.480], 13);
 
-// Adiciona os botões de zoom no canto inferior direito
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
-  attribution: '© OpenStreetMap contributors'
+  attribution: '© OpenStreetMap'
 }).addTo(map);
 
-const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-  maxZoom: 17,
-  attribution: '© OpenTopoMap'
-}); 
+// Camada topográfica baseada em tiles Terrarium (sem limites de API e ultra rápida)
+const topo = L.topoLayer({ range: [700, 850], opacity: 0.82 });
+topo.addTo(map);
 
-let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null, elevationLayer = null, heatBusy = false;
+// Atualiza o gradiente da legenda automaticamente
+const legendGrad = $('legendGradient');
+if (legendGrad && topo.legendGradient) {
+  legendGrad.style.background = topo.legendGradient();
+}
+
+let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null;
 
 const $ = id => document.getElementById(id), status = t => $('status').textContent = t;
 
-// Controle da Janela Flutuante (Modal de Busca e Rota)
+// Controle da Janela Flutuante (Modal)
 const modal = $('searchModal');
 const openModal = () => modal.classList.remove('hidden');
 const closeModal = () => modal.classList.add('hidden');
@@ -56,7 +60,7 @@ window.removeVia = i => { via.splice(i, 1); renderVia(); if (origin && destinati
 
 map.on('click', e => {
   if (!zoneBounds.contains(e.latlng)) {
-    status('Selecione um ponto dentro da área coberta.');
+    status('Selecione um ponto dentro dos distritos cobertos.');
     return;
   }
   queryElevation(e.latlng, true);
@@ -73,7 +77,7 @@ map.on('click', e => {
     origin = e.latlng; 
     $('origin').value = reverseName(origin); 
     originMarker = setMarker(originMarker, origin, 'Origem', '#1685ff'); 
-    status('Origem selecionada. Defina o destino.'); 
+    status('Origem definida. Escolha o destino.'); 
     return; 
   }
   if (!destination) { 
@@ -85,7 +89,7 @@ map.on('click', e => {
   }
   via.push(e.latlng); 
   renderVia(); 
-  status(`Parada ${via.length} adicionada. Recalculando...`); 
+  status(`Parada intermediária ${via.length} adicionada. Recalculando...`); 
   calculateRoute();
 });
 
@@ -99,14 +103,14 @@ function locate(setAsOrigin = false) {
   navigator.geolocation.getCurrentPosition(pos => {
     const p = L.latLng(pos.coords.latitude, pos.coords.longitude);
     if (!zoneBounds.contains(p)) {
-      status('Sua localização está fora dos distritos cobertos.');
+      status('Sua localização está fora da zona monitorada.');
       return;
     }
     queryElevation(p, false);
     userMarker = setMarker(userMarker, p, 'Sua localização', '#1685ff');
     map.setView(p, 16);
     if (setAsOrigin) { origin = p; $('origin').value = 'Minha localização atual'; originMarker = setMarker(originMarker, p, 'Origem', '#1685ff'); }
-    status('GPS atualizado com sucesso.');
+    status('Localização GPS atualizada (' + Math.round(pos.coords.accuracy) + 'm).');
     if (!watchId) watchId = navigator.geolocation.watchPosition(updatePosition, () => {}, { enableHighAccuracy: true, maximumAge: 5000 });
   }, err => status('Erro no GPS: ' + err.message), { enableHighAccuracy: true, timeout: 15000 });
 }
@@ -157,12 +161,12 @@ $('origin').addEventListener('change', async e => {
     const r = await geocode(e.target.value);
     if (r[0]) {
       const p = L.latLng(+r[0].lat, +r[0].lon);
-      if (!zoneBounds.contains(p)) { status('Localização fora da área.'); return; }
+      if (!zoneBounds.contains(p)) { status('Localização fora da área coberta.'); return; }
       origin = p;
       originMarker = setMarker(originMarker, origin, 'Origem', '#1685ff');
       map.setView(origin, 15);
     }
-  } catch (_) { status('Não foi possível localizar.'); }
+  } catch (_) { status('Não foi possível localizar a origem.'); }
 });
 
 $('routeBtn').onclick = () => { closeModal(); calculateRoute(); };
@@ -179,13 +183,13 @@ $('clearBtn').onclick = () => {
 };
 
 async function calculateRoute() {
-  if (!origin || !destination) { status('Defina origem e destino.'); openModal(); return; }
+  if (!origin || !destination) { status('Defina origem e destino primeiro.'); openModal(); return; }
   status('Calculando rota para bicicleta...');
   const points = [origin, ...via, destination].map(p => `${p.lng},${p.lat}`).join('|');
   const url = `https://brouter.de/brouter?lonlats=${encodeURIComponent(points)}&profile=trekking&alternativeidx=0&format=geojson`;
   try {
     const r = await fetch(url);
-    if (!r.ok) throw Error('Serviço indisponível');
+    if (!r.ok) throw Error('Serviço de rotas indisponível');
     const data = await r.json();
     if (!data.features?.length) throw Error('Nenhuma rota encontrada');
     const coords = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]);
@@ -194,7 +198,7 @@ async function calculateRoute() {
     map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
     const props = data.features[0].properties || {}, km = (props['track-length'] || props['total-distance'] || 0) / 1000;
     $('routeInfo').hidden = false;
-    $('routeInfo').innerHTML = `<b>Rota para bicicleta</b> · ${km ? km.toFixed(2) + ' km' : ''}`;
+    $('routeInfo').innerHTML = `<b>Rota para bicicleta</b> · <b>${km ? km.toFixed(2) + ' km' : 'OK'}</b><br><small>Toque em uma rua para adicionar parada intermediária.</small>`;
     status('Rota calculada com sucesso.');
   } catch (e) { status('Erro ao calcular rota.'); }
 }
@@ -202,17 +206,20 @@ async function calculateRoute() {
 $('heatBtn').onclick = () => {
   heatOn = !heatOn;
   $('heatBtn').classList.toggle('active', heatOn);
-  if (heatOn) {
-    if (elevationLayer) elevationLayer.addTo(map);
-    else loadElevation();
-  } else if (elevationLayer) {
-    map.removeLayer(elevationLayer);
-  }
+  if (heatOn) topo.addTo(map);
+  else map.removeLayer(topo);
 };
 
 $('layersBtn').onclick = () => {
-  if (map.hasLayer(topo)) { map.removeLayer(topo); street.addTo(map); }
-  else { map.removeLayer(street); topo.addTo(map); }
+  if (map.hasLayer(topo)) {
+    map.removeLayer(topo);
+    street.addTo(map);
+    status('Camada de Ruas (OpenStreetMap) ativa.');
+  } else {
+    street.remove();
+    topo.addTo(map);
+    status('Mapa Topográfico de Altitude ativo.');
+  }
 };
 
 async function getElevation(p) {
@@ -237,7 +244,7 @@ async function queryElevation(p, isSelected) {
     const v = await getElevation(p);
     if (isSelected) {
       selectedElevation = v;
-      selectedPointMarker = setMarker(selectedPointMarker, p, `Ponto: ${v} m`, '#e3a52d');
+      selectedPointMarker = setMarker(selectedPointMarker, p, `Ponto selecionado: ${v} m`, '#e3a52d');
       $('elevationInfo').hidden = false;
       $('selectedElev').textContent = v + ' m';
     } else {
@@ -252,91 +259,9 @@ async function queryElevation(p, isSelected) {
 function updateElevationDifference() {
   if (currentElevation === null || selectedElevation === null) return;
   const d = selectedElevation - currentElevation, s = d > 0 ? '+' : '';
-  $('elevDiff').textContent = s + d + ' m ' + (d > 0 ? 'acima' : d < 0 ? 'abaixo' : 'mesma altitude');
+  $('elevDiff').textContent = s + d + ' m ' + (d > 0 ? 'acima da sua posição' : d < 0 ? 'abaixo da sua posição' : 'na mesma altitude');
   $('elevDiff').style.color = d > 0 ? '#b65b24' : d < 0 ? '#176b47' : '#52645a';
 }
-
-async function loadElevation() {
-  if (heatBusy) return;
-  heatBusy = true;
-  status('Carregando mapa térmico...');
-  
-  const b = zoneBounds, rows = 18, cols = 20, pts = [];
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const lat = b.getNorth() - (b.getNorth() - b.getSouth()) * y / (rows - 1);
-      const lon = b.getWest() + (b.getEast() - b.getWest()) * x / (cols - 1);
-      pts.push([lat, lon]);
-    }
-  }
-
-  try {
-    const lats = pts.map(p => p[0].toFixed(4)).join(',');
-    const lons = pts.map(p => p.lats || p[1].toFixed(4)).join(',') /* corrigido */;
-    // Ajuste limpo para requisição em lote segura
-    const latsArr = pts.map(p => p[0].toFixed(4));
-    const lonsArr = pts.map(p => p[1].toFixed(4));
-    
-    const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latsArr.join(',')}&longitude=${lonsArr.join(',')}`);
-    if (!r.ok) throw Error('Erro na API');
-    const data = await r.json();
-    const vals = data.elevation;
-    if (!vals || vals.length !== pts.length) throw Error('Dados incompletos');
-
-    // Faixa estrita de 700m a 850m
-    const min = 700, max = 850;
-    
-    const scale = 8, width = (cols - 1) * scale + 1, height = (rows - 1) * scale + 1;
-    const c = document.createElement('canvas');
-    c.width = width; c.height = height;
-    const ctx = c.getContext('2d');
-    const pixels = ctx.createImageData(width, height);
-    
-    // Paleta de cores suave clássica do primeiro app
-    const stops = [
-      [0.00, [35, 190, 105]],
-      [0.25, [165, 211, 66]],
-      [0.50, [242, 211, 65]],
-      [0.75, [247, 139, 57]],
-      [1.00, [218, 65, 83]]
-    ];
-
-    for (let py = 0; py < height; py++) {
-      const gy = py / scale, y0 = Math.min(rows - 1, Math.floor(gy)), y1 = Math.min(rows - 1, y0 + 1), fy = gy - y0;
-      for (let px = 0; px < width; px++) {
-        const gx = px / scale, x0 = Math.min(cols - 1, Math.floor(gx)), x1 = Math.min(cols - 1, x0 + 1), fx = gx - x0;
-        const a = vals[y0 * cols + x0], bb = vals[y0 * cols + x1], cc = vals[y1 * cols + x0], dd = vals[y1 * cols + x1];
-        let elev = (a * (1 - fx) + bb * fx) * (1 - fy) + (cc * (1 - fx) + dd * fx) * fy;
-        
-        let t = (elev - min) / (max - min);
-        t = Math.max(0, Math.min(1, t));
-
-        let k = 0; while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
-        const f = Math.max(0, Math.min(1, (t - stops[k][0]) / (stops[k + 1][0] - stops[k][0])));
-        const color = stops[k][1].map((v, i) => Math.round(v + (stops[k + 1][1][i] - v) * f));
-        
-        const index = (py * width + px) * 4;
-        pixels.data[index] = color[0];
-        pixels.data[index + 1] = color[1];
-        pixels.data[index + 2] = color[2];
-        pixels.data[index + 3] = 160;
-      }
-    }
-    ctx.putImageData(pixels, 0, 0);
-
-    if (elevationLayer) map.removeLayer(elevationLayer);
-    elevationLayer = L.imageOverlay(c.toDataURL(), zoneBounds, { opacity: 0.85, interactive: false });
-    if (heatOn) elevationLayer.addTo(map);
-
-    status('Mapa térmico atualizado (700m–850m).');
-  } catch (e) {
-    status('Mapa térmico indisponível no momento.');
-  } finally {
-    heatBusy = false;
-  }
-}
-
-loadElevation();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});

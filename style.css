@@ -2,11 +2,11 @@
 :root{--dark:#132b26;--green:#1d6b4b;--muted:#65736d}
 html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f1f5f2;color:#17251f}
 
-/* Mapa ocupando 100% da tela */
+/* Mapa em Tela Cheia absoluta */
 #map{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;background:#dce9df}
 
-/* Botoes Flutuantes Superiores */
-.floating-controls{position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100% - 140px)}
+/* Controles Flutuantes Superiores */
+.floating-controls{position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100% - 150px)}
 .float-btn{border:0;border-radius:12px;padding:10px 14px;background:#ffffffEE;color:#1c3028;font-weight:700;font-size:13px;box-shadow:0 4px 15px rgba(0,0,0,0.15);backdrop-filter:blur(4px);cursor:pointer;display:flex;align-items:center;gap:4px;transition:all 0.2s ease}
 .float-btn:active{transform:scale(0.95)}
 .float-btn.active{background:#173b2e;color:#fff}
@@ -14,10 +14,10 @@ html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;font-family:
 /* Legenda Flutuante */
 .legend{position:absolute;top:12px;right:12px;z-index:500;background:#ffffffEE;padding:10px 12px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.15);backdrop-filter:blur(4px);width:130px;font-size:10px}
 .legend b{display:block;text-align:center;color:#132b26;font-size:10px;margin-bottom:4px}
-.gradient{height:12px;border-radius:6px;margin:4px 0;background:linear-gradient(90deg, #0a50a0 0%, #1ea0c8 20%, #32c864 40%, #dcd228 60%, #f0781e 80%, #c81e32 100%)}
-.legend-labels{display:flex;justify-space-between;color:#56645d;font-weight:600;font-size:9px}
+.gradient{height:12px;border-radius:6px;margin:4px 0}
+.legend-labels{display:flex;justify-content:space-between;color:#56645d;font-weight:600;font-size:9px}
 
-/* Overlay da Janela Flutuante (Modal) */
+/* Janela Flutuante (Modal de Busca) */
 .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;transition:opacity 0.2s ease}
 .modal-overlay.hidden{display:none;opacity:0;pointer-events:none}
 .modal-card{background:#ffffff;width:100%;max-width:420px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.25);overflow:hidden;animation:slideUp 0.25s ease-out}
@@ -27,7 +27,6 @@ html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;font-family:
 .close-btn{background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer;padding:0 4px}
 .modal-body{padding:16px}
 
-/* Inputs e Botoes dentro da Modal */
 .field{margin-bottom:12px}
 label{display:block;font-size:10px;letter-spacing:1px;font-weight:800;color:#557065;margin-bottom:4px}
 .inputrow{display:flex;gap:7px}

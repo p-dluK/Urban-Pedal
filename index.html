@@ -12,20 +12,22 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- Mapa em Tela Cheia -->
 <div id="map" aria-label="Mapa interativo"></div>
 
 <!-- Controles Flutuantes Superiores -->
-<div class="floating-controls top-controls">
-  <button id="searchToggleBtn" class="float-btn" title="Buscar Endereço">🔍</button>
-  <button id="heatBtn" class="float-btn active" title="Mapa Térmico de Altitude">🌡 Altitude</button>
+<div class="floating-controls">
+  <button id="searchToggleBtn" class="float-btn" title="Buscar Endereço / Rota">🔍 Buscar</button>
+  <button id="heatBtn" class="float-btn active" title="Mapa Térmico Topográfico">🌡 Altitude</button>
   <button id="layersBtn" class="float-btn" title="Alternar Camadas">🗺 Camadas</button>
-  <button id="locateBtn" class="float-btn" title="Minha Localização GPS">◎</button>
+  <button id="locateBtn" class="float-btn" title="Minha Localização GPS">◎ GPS</button>
 </div>
 
 <!-- Legenda Flutuante -->
 <div id="legend" class="legend">
   <b>ALTITUDE 700–850 m</b>
-  <div class="gradient"></div>
+  <div id="legendGradient" class="gradient"></div>
   <div class="legend-labels">
     <span>700m</span>
     <span>775m</span>
@@ -33,11 +35,11 @@
   </div>
 </div>
 
-<!-- Modal / Janela Flutuante de Busca e Rota -->
+<!-- Janela Flutuante (Modal) de Pesquisa e Rotas -->
 <div id="searchModal" class="modal-overlay hidden">
   <div class="modal-card">
     <div class="modal-header">
-      <h3>Traçar Rota / Pesquisa</h3>
+      <h3>Planeador de Rota & Pesquisa</h3>
       <button id="closeModalBtn" class="close-btn">&times;</button>
     </div>
     <div class="modal-body">
@@ -64,9 +66,9 @@
   </div>
 </div>
 
-<!-- Painel Flutuante de Informações de Rota e Altitude (Inferior) -->
+<!-- Painel Flutuante Inferior (Status e Comparador de Altitude) -->
 <div class="floating-info-wrap">
-  <div id="status" class="status-toast">Toque no mapa para consultar altitude ou navegue pelos controles.</div>
+  <div id="status" class="status-toast">Toque em um ponto do mapa para consultar a altitude.</div>
   <div id="routeInfo" class="info-card" hidden></div>
   <div id="elevationInfo" class="info-card" hidden>
     <div class="elev-head">
@@ -84,6 +86,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="topo-layer.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
