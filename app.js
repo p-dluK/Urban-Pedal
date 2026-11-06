@@ -6,28 +6,39 @@ const zoneBounds = L.latLngBounds(
   [-23.460, -46.415]  // Nordeste (Norte / Leste)
 );
 
-// Inicializa o mapa centralizado na região da Zona Leste escolhida
+// Inicializa o mapa ocupando a tela inteira
 const map = L.map('map', {
-  zoomControl: true,
+  zoomControl: false, // Otimizado para navegação mobile limpa
   maxBounds: zoneBounds,
   maxBoundsViscosity: 0.8,
   minZoom: 12,
   maxZoom: 18
 }).setView([-23.512, -46.480], 13);
 
+// Adiciona os botões de zoom no canto inferior direito
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
 const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
-  attribution: '© OpenStreetMap contributors'
+  attribution: '© OpenStreetMap'
 }).addTo(map);
 
 const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
   maxZoom: 17,
-  attribution: '© OpenTopoMap (CC-BY-SA)'
+  attribution: '© OpenTopoMap'
 }); 
 
 let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null, elevationLayer = null, heatBusy = false;
 
 const $ = id => document.getElementById(id), status = t => $('status').textContent = t;
+
+// Controle da Janela Flutuante (Modal)
+const modal = $('searchModal');
+const openModal = () => modal.classList.remove('hidden');
+const closeModal = () => modal.classList.add('hidden');
+
+$('searchToggleBtn').onclick = openModal;
+$('closeModalBtn').onclick = closeModal;
 
 const setMarker = (old, p, label, color) => {
   if (old) map.removeLayer(old);
@@ -45,7 +56,7 @@ window.removeVia = i => { via.splice(i, 1); renderVia(); if (origin && destinati
 
 map.on('click', e => {
   if (!zoneBounds.contains(e.latlng)) {
-    status('Selecione um ponto dentro dos distritos de Ermelino Matarazzo, Penha, Ponte Rasa, Cangaíba ou Vila Jacuí.');
+    status('Selecione um ponto dentro da área coberta da Zona Leste.');
     return;
   }
   queryElevation(e.latlng, true);
@@ -54,21 +65,22 @@ map.on('click', e => {
     $('destination').value = reverseName(destination); 
     destMarker = setMarker(destMarker, destination, 'Destino', '#dc4d4d'); 
     choosingDest = false; 
-    status('Destino selecionado.'); 
+    status('Destino selecionado via mapa.'); 
+    openModal();
     return; 
   }
   if (!origin) { 
     origin = e.latlng; 
     $('origin').value = reverseName(origin); 
     originMarker = setMarker(originMarker, origin, 'Origem', '#1685ff'); 
-    status('Origem selecionada. Agora escolha o destino.'); 
+    status('Origem definida no mapa.'); 
     return; 
   }
   if (!destination) { 
     destination = e.latlng; 
     $('destination').value = reverseName(destination); 
     destMarker = setMarker(destMarker, destination, 'Destino', '#dc4d4d'); 
-    status('Destino selecionado.'); 
+    status('Destino definido no mapa.'); 
     return; 
   }
   via.push(e.latlng); 
@@ -77,26 +89,26 @@ map.on('click', e => {
   calculateRoute();
 });
 
-$('pickDest').onclick = () => { choosingDest = true; status('Toque no mapa para escolher o destino.'); };
+$('pickDest').onclick = () => { choosingDest = true; closeModal(); status('Toque no mapa para escolher o destino.'); };
 $('originHere').onclick = () => locate(true);
 $('locateBtn').onclick = () => locate(true);
 
 function locate(setAsOrigin = false) {
-  if (!navigator.geolocation) { status('GPS não disponível neste navegador.'); return; }
+  if (!navigator.geolocation) { status('GPS não disponível.'); return; }
   status('Obtendo localização GPS...');
   navigator.geolocation.getCurrentPosition(pos => {
     const p = L.latLng(pos.coords.latitude, pos.coords.longitude);
     if (!zoneBounds.contains(p)) {
-      status('Sua localização está fora da zona monitorada (Zona Leste - 5 distritos).');
+      status('Sua localização está fora dos distritos cobertos.');
       return;
     }
     queryElevation(p, false);
     userMarker = setMarker(userMarker, p, 'Sua localização', '#1685ff');
     map.setView(p, 16);
     if (setAsOrigin) { origin = p; $('origin').value = 'Minha localização atual'; originMarker = setMarker(originMarker, p, 'Origem', '#1685ff'); }
-    status('Localização atualizada. Precisão aproximada: ' + Math.round(pos.coords.accuracy) + ' m.');
+    status('Localização GPS atualizada (' + Math.round(pos.coords.accuracy) + 'm de precisão).');
     if (!watchId) watchId = navigator.geolocation.watchPosition(updatePosition, () => {}, { enableHighAccuracy: true, maximumAge: 5000 });
-  }, err => status('Não foi possível obter GPS: ' + err.message), { enableHighAccuracy: true, timeout: 15000 });
+  }, err => status('Erro no GPS: ' + err.message), { enableHighAccuracy: true, timeout: 15000 });
 }
 
 function updatePosition(pos) {
@@ -145,7 +157,7 @@ $('origin').addEventListener('change', async e => {
     const r = await geocode(e.target.value);
     if (r[0]) {
       const p = L.latLng(+r[0].lat, +r[0].lon);
-      if (!zoneBounds.contains(p)) { status('Localização fora da área de cobertura.'); return; }
+      if (!zoneBounds.contains(p)) { status('Localização fora da área coberta.'); return; }
       origin = p;
       originMarker = setMarker(originMarker, origin, 'Origem', '#1685ff');
       map.setView(origin, 15);
@@ -153,7 +165,7 @@ $('origin').addEventListener('change', async e => {
   } catch (_) { status('Não foi possível localizar a origem.'); }
 });
 
-$('routeBtn').onclick = calculateRoute;
+$('routeBtn').onclick = () => { closeModal(); calculateRoute(); };
 $('clearBtn').onclick = () => {
   origin = destination = null;
   via = [];
@@ -167,7 +179,7 @@ $('clearBtn').onclick = () => {
 };
 
 async function calculateRoute() {
-  if (!origin || !destination) { status('Defina origem e destino primeiro.'); return; }
+  if (!origin || !destination) { status('Defina origem e destino primeiro.'); openModal(); return; }
   status('Calculando rota para bicicleta...');
   const points = [origin, ...via, destination].map(p => `${p.lng},${p.lat}`).join('|');
   const url = `https://brouter.de/brouter?lonlats=${encodeURIComponent(points)}&profile=trekking&alternativeidx=0&format=geojson`;
@@ -182,9 +194,9 @@ async function calculateRoute() {
     map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
     const props = data.features[0].properties || {}, km = (props['track-length'] || props['total-distance'] || 0) / 1000;
     $('routeInfo').hidden = false;
-    $('routeInfo').innerHTML = `<b>Rota para bicicleta</b><br>Distância aproximada: <b>${km ? km.toFixed(2) + ' km' : 'consulte o traçado'}</b><br>Paradas intermediárias: ${via.length}<br><small>Toque em outra rua para inserir mais um ponto.</small>`;
-    status('Rota calculada. Confira o traçado antes de pedalar.');
-  } catch (e) { status('Não foi possível calcular: ' + e.message + '. Tente novamente.'); }
+    $('routeInfo').innerHTML = `<b>Rota para bicicleta</b> · Distância: <b>${km ? km.toFixed(2) + ' km' : 'OK'}</b><br><small>Toque em uma rua para adicionar parada intermediária.</small>`;
+    status('Rota calculada com sucesso.');
+  } catch (e) { status('Erro na rota: ' + e.message); }
 }
 
 $('heatBtn').onclick = () => {
@@ -243,9 +255,9 @@ function updateElevationDifference() {
 async function loadElevation() {
   if (heatBusy) return;
   heatBusy = true;
-  status('Carregando mapa térmico detalhado de altitude...');
+  status('Carregando mapa térmico de altitude...');
   
-  // Aumentado o número de linhas e colunas para maior resolução/nitidez no relevo
+  // Alta resolução de amostragem
   const b = zoneBounds, rows = 28, cols = 32, pts = [];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -269,7 +281,7 @@ async function loadElevation() {
     }
     if (vals.some(v => v === null || v === undefined || !Number.isFinite(v))) throw Error('Amostras sem elevação');
 
-    // Intervalo fixo customizado solicitado: 700m a 850m
+    // Intervalo de altitude ajustado: 700m a 850m
     const min = 700, max = 850;
     
     const scale = 8, width = (cols - 1) * scale + 1, height = (rows - 1) * scale + 1;
@@ -278,14 +290,14 @@ async function loadElevation() {
     const ctx = c.getContext('2d');
     const pixels = ctx.createImageData(width, height);
     
-    // Gama de cores expandida e mais rica (estilo cartografia profissional / arco-íris suave)
+    // Gama de cores ajustada e vívida (Azul -> Ciano -> Verde -> Amarelo -> Laranja -> Vermelho)
     const stops = [
-      [0.00, [10,  80, 160]], // Azul profundo (700m)
+      [0.00, [10,  80, 160]], // Azul
       [0.20, [30, 160, 200]], // Ciano
-      [0.40, [50, 200, 100]], // Verde claro
+      [0.40, [50, 200, 100]], // Verde
       [0.60, [220, 210, 40]], // Amarelo
       [0.80, [240, 120, 30]], // Laranja
-      [1.00, [200,  30, 50]]  // Vermelho escuro/vinho (850m ou mais)
+      [1.00, [200,  30, 50]]  // Vermelho
     ];
 
     for (let py = 0; py < height; py++) {
@@ -295,9 +307,8 @@ async function loadElevation() {
         const a = vals[y0 * cols + x0], bb = vals[y0 * cols + x1], cc = vals[y1 * cols + x0], dd = vals[y1 * cols + x1];
         let elev = (a * (1 - fx) + bb * fx) * (1 - fy) + (cc * (1 - fx) + dd * fx) * fy;
         
-        // Normaliza estritamente com base na faixa fixa [700, 850]
         let t = (elev - min) / (max - min);
-        t = Math.max(0, Math.min(1, t)); // Trava os limites para não estourar as pontas
+        t = Math.max(0, Math.min(1, t));
 
         let k = 0; while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
         const f = Math.max(0, Math.min(1, (t - stops[k][0]) / (stops[k + 1][0] - stops[k][0])));
@@ -307,7 +318,7 @@ async function loadElevation() {
         pixels.data[index] = color[0];
         pixels.data[index + 1] = color[1];
         pixels.data[index + 2] = color[2];
-        pixels.data[index + 3] = 165; // Levemente mais opaco para destacar bem as cores
+        pixels.data[index + 3] = 175; // Nitidez reforçada
       }
     }
     ctx.putImageData(pixels, 0, 0);
@@ -316,10 +327,9 @@ async function loadElevation() {
     elevationLayer = L.imageOverlay(c.toDataURL(), zoneBounds, { opacity: 0.85, interactive: false });
     if (heatOn) elevationLayer.addTo(map);
 
-    $('legend').querySelector('b').textContent = `ALTITUDE 700–850 m`;
-    status(`Mapa térmico de alta definição carregado (Escala fixa: 700m–850m).`);
+    status(`Mapa térmico de altitude ativo (700m a 850m).`);
   } catch (e) {
-    status('Mapa térmico indisponível no momento. Tente novamente.');
+    status('Mapa térmico indisponível no momento.');
   } finally {
     heatBusy = false;
   }
