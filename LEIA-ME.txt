@@ -49,3 +49,13 @@ Abrir `index.html` diretamente como arquivo não habilita todos os recursos de G
 - A escala de cores é fixa (722–820 m). Para mudar, edite HEAT_RANGE em app.js.
 - O comparador de altitude (ponto tocado x GPS) continua usando OpenTopoData/Mapzen.
 - Ao publicar, envie também topo-layer.js. O cache do app foi renovado (altitude-bike-v3).
+
+
+ATUALIZAÇÃO VISUAL v4
+- A busca de endereço inicia recolhida; toque em “Buscar” para abrir e no X para recolher.
+- O mapa térmico continua como camada principal. Uma camada cartográfica clara é desenhada por cima em modo de mistura para deixar ruas e cruzamentos mais definidos, sem imagens de construções.
+- A paleta de altitude foi ampliada de azul/verde até amarelo, laranja e vermelho. A camada continua sendo referência visual de relevo, não é usada para calcular rotas.
+- Ícone novo do aplicativo com ciclista subindo uma ladeira.
+- GPS, rotas, pontos intermediários e consulta/comparação de altitude foram preservados.
+
+Para atualizar no GitHub Pages, envie os arquivos desta pasta para a raiz do repositório, substituindo os antigos, e faça Commit changes.

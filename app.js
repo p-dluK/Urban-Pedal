@@ -21,11 +21,21 @@ const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', 
 });
 
 // Camada topográfica hipsométrica em tempo real
-const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.75 }).addTo(map);
+const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.78 }).addTo(map);
+
+// Ruas detalhadas por cima do mapa térmico, com mistura multiply para preservar as cores do relevo.
+const streetDetail = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19, attribution: '© OpenStreetMap contributors © CARTO', opacity: 0.78, className: 'street-detail', subdomains: 'abcd'
+}).addTo(map);
 
 let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null;
 
-const $ = id => document.getElementById(id), status = t => $('status').textContent = t;
+const $ = id => document.getElementById(id);
+const status = t => { $('status').textContent = t; if ($('mapStatus')) $('mapStatus').textContent = t; };
+
+// A busca começa recolhida para deixar o mapa térmico ocupar a tela.
+$('searchToggleBtn').onclick = () => { $('searchPanel').hidden = false; $('searchToggleBtn').hidden = true; };
+$('closeSearchBtn').onclick = () => { $('searchPanel').hidden = true; $('searchToggleBtn').hidden = false; };
 
 const setMarker = (old, p, label, color) => {
   if (old) map.removeLayer(old);
