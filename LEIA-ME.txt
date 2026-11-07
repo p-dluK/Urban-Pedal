@@ -51,11 +51,19 @@ Abrir `index.html` diretamente como arquivo não habilita todos os recursos de G
 - Ao publicar, envie também topo-layer.js. O cache do app foi renovado (altitude-bike-v3).
 
 
-ATUALIZAÇÃO VISUAL v4
-- A busca de endereço inicia recolhida; toque em “Buscar” para abrir e no X para recolher.
-- O mapa térmico continua como camada principal. Uma camada cartográfica clara é desenhada por cima em modo de mistura para deixar ruas e cruzamentos mais definidos, sem imagens de construções.
-- A paleta de altitude foi ampliada de azul/verde até amarelo, laranja e vermelho. A camada continua sendo referência visual de relevo, não é usada para calcular rotas.
-- Ícone novo do aplicativo com ciclista subindo uma ladeira.
-- GPS, rotas, pontos intermediários e consulta/comparação de altitude foram preservados.
+## Versão 5 — ruas mais visíveis e atualização automática
+- Mantém a paleta térmica aprovada e desenha a camada de ruas em alto contraste acima do relevo.
+- A busca inicia recolhida para liberar a tela do mapa.
+- O service worker usa estratégia de rede primeiro para arquivos do próprio app, com cache como fallback offline.
+- Ao abrir ou voltar ao app, verifica atualizações; quando uma versão nova assume o controle, a página recarrega automaticamente.
+- Ícone do app substituído pela referência enviada pelo usuário (arte urbana em preto e branco).
+- Para publicar, substitua os arquivos na raiz do GitHub Pages. A primeira abertura após a publicação deve estar conectada à internet.
 
-Para atualizar no GitHub Pages, envie os arquivos desta pasta para a raiz do repositório, substituindo os antigos, e faça Commit changes.
+
+## Versão 6 — atualização automática reforçada
+- O app verifica novas versões ao abrir, ao voltar para a aba, ao recuperar o foco e a cada 60 segundos.
+- O registro do Service Worker ignora o cache HTTP do navegador (`updateViaCache: none`).
+- O Service Worker novo é ativado imediatamente, substitui o cache antigo e recarrega a página quando uma versão anterior já estava ativa.
+- Os arquivos HTML, CSS e JavaScript são buscados primeiro na rede; o cache fica como alternativa quando estiver sem internet.
+- Ao publicar uma atualização, substitua TODOS os arquivos do ZIP na raiz do repositório, inclusive `sw.js` e `index.html`.
+- A atualização automática depende de publicar a nova versão no GitHub Pages e estar conectado à internet ao verificar.
