@@ -7,24 +7,28 @@
 <meta name="description" content="GPS de bicicleta com mapa de altitude para a Zona Leste de São Paulo.">
 <title>Altitude Bike GPS</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.png?v=5" type="image/png">
-<link rel="apple-touch-icon" href="icon-192.png?v=5">
+<link rel="icon" href="icon-192.png" type="image/png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
   <!-- Mapa Fullscreen -->
   <div id="map" aria-label="Mapa interativo"></div>
 
-  <!-- Busca recolhida por padrão para priorizar o mapa -->
-  <button id="searchToggle" class="search-toggle" type="button" aria-expanded="false" aria-controls="searchPanel" title="Abrir busca">⌕ <span>BUSCAR</span></button>
-  <section id="searchPanel" class="floating-panel" aria-label="Busca e rota">
-    <div class="panel-heading">
-      <strong style="color:var(--dark); font-size:16px;">ALTITUDE <span>BIKE</span></strong>
-      <div class="panel-heading-actions">
-        <button id="locateBtn" class="smallbtn" style="padding:6px 10px;" title="Minha localização" aria-label="Minha localização">📍 GPS</button>
-        <button id="searchClose" class="close-panel" type="button" aria-label="Fechar busca" title="Fechar">×</button>
+  <!-- Atalho para abrir a busca sem ocupar o mapa -->
+  <button id="searchToggleBtn" class="search-toggle" aria-label="Abrir pesquisa de endereço" title="Pesquisar endereço">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+    <span>Buscar</span>
+  </button>
+
+  <!-- Janela de pesquisa: recolhida por padrão -->
+  <section class="floating-panel" id="searchPanel" hidden>
+    <div class="panel-header">
+      <strong>ALTITUDE <span>BIKE GPS</span></strong>
+      <div class="panel-header-actions">
+        <button id="locateBtn" class="smallbtn" title="Minha localização" aria-label="Minha localização">📍 GPS</button>
+        <button id="closeSearchBtn" class="close-search" title="Recolher pesquisa" aria-label="Recolher pesquisa">×</button>
       </div>
     </div>
     <div class="field">
@@ -50,6 +54,8 @@
     <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
 
+  <div id="mapStatus" class="map-status" aria-live="polite">Mapa pronto · toque para consultar altitude</div>
+
   <!-- Botões de Controle Flutuantes -->
   <div class="map-tools-floating">
     <button id="heatBtn" class="tool-btn active">🌡 Altitude</button>
@@ -64,63 +70,7 @@
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="topo-layer.js?v=6"></script>
-<script src="app.js?v=6"></script>
-<script>
-  // Atualização automática: checa ao abrir, ao voltar à aba e periodicamente.
-  if ('serviceWorker' in navigator) {
-    let reloadingForUpdate = false;
-    const hadController = Boolean(navigator.serviceWorker.controller);
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      // Não recarrega na primeira instalação; só quando uma versão substitui outra.
-      if (hadController && !reloadingForUpdate) {
-        reloadingForUpdate = true;
-        window.location.reload();
-      }
-    });
-
-    async function checkForAppUpdate() {
-      try {
-        const reg = await navigator.serviceWorker.getRegistration('./');
-        if (reg) await reg.update();
-      } catch (e) {
-        console.warn('Não foi possível verificar atualização agora.', e);
-      }
-    }
-
-    window.addEventListener('load', async () => {
-      try {
-        const reg = await navigator.serviceWorker.register('./sw.js?v=6', {
-          scope: './',
-          updateViaCache: 'none'
-        });
-        await reg.update();
-
-        // Se uma nova versão terminar de instalar, pede ativação imediata.
-        reg.addEventListener('updatefound', () => {
-          const worker = reg.installing;
-          if (!worker) return;
-          worker.addEventListener('statechange', () => {
-            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-              worker.postMessage('SKIP_WAITING');
-            }
-          });
-        });
-
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') checkForAppUpdate();
-        });
-        window.addEventListener('focus', checkForAppUpdate);
-        window.addEventListener('pageshow', checkForAppUpdate);
-
-        // Verifica a cada 60 segundos enquanto o app estiver aberto.
-        window.setInterval(checkForAppUpdate, 60000);
-      } catch (e) {
-        console.warn('Service Worker indisponível.', e);
-      }
-    });
-  }
-</script>
+<script src="topo-layer.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

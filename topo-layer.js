@@ -4,13 +4,16 @@
  */
 (function () {
   const STOPS = [
-    [0.00, [76, 153, 86]],
-    [0.25, [165, 200, 110]],
-    [0.50, [240, 228, 140]],
-    [0.75, [228, 170, 90]],
-    [1.00, [168, 104, 64]],
+    [0.00, [22, 79, 145]],   // azul: cotas mais baixas
+    [0.14, [0, 151, 177]],   // azul-petróleo
+    [0.28, [24, 184, 105]],  // verde
+    [0.42, [135, 211, 35]],  // verde-limão
+    [0.56, [239, 235, 20]],  // amarelo
+    [0.70, [255, 166, 0]],   // laranja
+    [0.84, [239, 75, 25]],   // vermelho-alaranjado
+    [1.00, [145, 22, 48]],   // vermelho escuro: cotas mais altas
   ];
-  const LINE = [110, 70, 40];
+  const LINE = [72, 54, 42];
 
   function ramp(t) {
     t = Math.min(1, Math.max(0, t));
