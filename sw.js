@@ -1,1 +1,1 @@
-const CACHE='altitude-bike-v5';
+const CACHE='altitude-bike-v6';
