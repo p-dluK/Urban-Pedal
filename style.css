@@ -120,3 +120,35 @@ body.pedal-mode .ride-button{padding:6px 8px;min-height:27px;font-size:9px}
 @media (orientation:landscape) and (max-height:600px){.settings-wrap{top:8px;right:8px}.settings-menu{top:48px}.mini-menu,.marker-menu{top:52px;right:160px}}
 body.pedal-mode .settings-wrap{top:max(7px,env(safe-area-inset-top));right:8px}
 body.pedal-mode .search-toggle{top:max(7px,env(safe-area-inset-top));bottom:auto;left:8px;width:38px;height:38px;min-height:38px;padding:0}
+
+
+/* Tela cheia imersiva: o mapa ocupa toda a área, inclusive atrás do recorte frontal
+   quando o Android/Chrome disponibiliza essa região para o PWA. */
+html, body, main {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+main {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
+}
+#map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* Os controles respeitam a área segura; o mapa permanece estendido até as bordas. */
+@supports (padding: env(safe-area-inset-top)) {
+  .search-toggle,
+  .settings-wrap,
+  .pedal-hud {
+    margin-top: env(safe-area-inset-top, 0px);
+  }
+}

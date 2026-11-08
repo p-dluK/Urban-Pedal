@@ -20,3 +20,11 @@ ATUALIZAÇÃO VISUAL v6
 - Ferramentas e histórico recolhidos no menu de configurações (engrenagem).
 - Mensagem flutuante de consulta de altitude removida do canto inferior esquerdo.
 - Exclusão de marcadores corrigida com identificação segura e atualização dos layers no mapa.
+
+
+ATUALIZAÇÃO v7 — TELA CHEIA IMERSIVA
+- Manifesto configurado com display fullscreen e fallback standalone.
+- O PWA instalado pelo Chrome passa a solicitar abertura em tela cheia, sem a interface normal do navegador e, em dispositivos compatíveis, sem as barras de status e navegação do Android.
+- Mantido viewport-fit=cover e mapa estendido até as bordas, incluindo a área do recorte frontal quando o Android/Chrome permitir.
+- Cache atualizado para urban-pedal-v7.
+OBSERVAÇÃO: o Android pode revelar temporariamente as barras do sistema por gestos; isso é controlado pelo próprio sistema. A instalação precisa ser atualizada/reaberta para aplicar o novo modo de exibição.

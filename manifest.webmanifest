@@ -2,7 +2,7 @@
   "name": "Urban Pedal",
   "short_name": "Urban Pedal",
   "start_url": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#102d25",
   "theme_color": "#102d25",
   "orientation": "any",
@@ -19,5 +19,9 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone"
   ]
 }
