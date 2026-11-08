@@ -4,11 +4,21 @@ const zoneBounds = L.latLngBounds([-23.565, -46.560], [-23.460, -46.415]);
 
 const map = L.map('map', {
   zoomControl: true,
+  rotate: true,
+  touchRotate: true,
+  shiftKeyRotate: true,
+  dragRotate: true,
   maxBounds: zoneBounds,
   maxBoundsViscosity: 0.8,
   minZoom: 12,
   maxZoom: 18
 }).setView([-23.512, -46.480], 13);
+
+// Ordem visual: mapa base < ruas detalhadas < mapa térmico.
+map.createPane('streetDetailPane');
+map.getPane('streetDetailPane').style.zIndex = 250;
+map.createPane('elevationPane');
+map.getPane('elevationPane').style.zIndex = 300;
 
 const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
@@ -21,11 +31,11 @@ const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', 
 });
 
 // Camada topográfica hipsométrica em tempo real
-const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.78 }).addTo(map);
+const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.78, pane: 'elevationPane' }).addTo(map);
 
 // Ruas detalhadas por cima do mapa térmico, com mistura multiply para preservar as cores do relevo.
 const streetDetail = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19, attribution: '© OpenStreetMap contributors © CARTO', opacity: 0.78, className: 'street-detail', subdomains: 'abcd'
+  maxZoom: 19, attribution: '© OpenStreetMap contributors © CARTO', opacity: 0.78, className: 'street-detail', subdomains: 'abcd', pane: 'streetDetailPane'
 }).addTo(map);
 
 let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null;
@@ -52,6 +62,7 @@ function renderVia() {
 window.removeVia = i => { via.splice(i, 1); renderVia(); if (origin && destination) calculateRoute(); };
 
 map.on('click', e => {
+  if (markerMode) return;
   if (!zoneBounds.contains(e.latlng)) {
     status('Selecione um ponto dentro dos distritos cobertos (ZL).');
     return;
@@ -243,3 +254,145 @@ function updateElevationDifference() {
   $('elevDiff').textContent = s + d + ' m ' + (d > 0 ? 'acima' : d < 0 ? 'abaixo' : 'na mesma altitude');
   $('elevDiff').style.color = d > 0 ? '#b65b24' : d < 0 ? '#176b47' : '#52645a';
 }
+
+
+// ===== URBAN PEDAL: gravação, marcadores, camadas e orientação =====
+const rideStoreKey = 'urban-pedal-rides-v1';
+const markerStoreKey = 'urban-pedal-markers-v1';
+let rideActive = false, rideStartedAt = 0, rideElapsedBefore = 0, rideTimer = null;
+let rideCoords = [], rideDistanceMeters = 0, lastRidePoint = null, rideLine = null;
+let markerMode = null, savedMarkers = [];
+let rotateBearing = 0;
+
+function readStore(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (_) { return fallback; } }
+function writeStore(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { status('Armazenamento cheio: não foi possível salvar tudo.'); } }
+function fmtTime(ms) { const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60; return [h,m,sec].map(v=>String(v).padStart(2,'0')).join(':'); }
+function elapsedRide() { return rideElapsedBefore + (rideActive ? Date.now()-rideStartedAt : 0); }
+function updateRideHud() {
+  const d=document.getElementById('rideDistance'), t=document.getElementById('rideTime');
+  if(d)d.textContent=(rideDistanceMeters/1000).toFixed(2).replace('.',',');
+  if(t)t.textContent=fmtTime(elapsedRide());
+}
+function saveActiveRide() {
+  if(!rideActive)return;
+  writeStore('urban-pedal-active-v1',{startedAt:rideStartedAt-rideElapsedBefore,coords:rideCoords,distance:rideDistanceMeters});
+}
+function startRide() {
+  if(!navigator.geolocation){status('GPS não disponível.');return;}
+  if(watchId!==null)navigator.geolocation.clearWatch(watchId);
+  watchId=navigator.geolocation.watchPosition(onRidePosition,err=>status('Falha no GPS: '+err.message),{enableHighAccuracy:true,maximumAge:1000,timeout:15000});
+  rideActive=true;rideStartedAt=Date.now();document.body.classList.add('pedal-mode');
+  const b=document.getElementById('rideButton');b.textContent='■ ENCERRAR';b.classList.add('recording');
+  if(document.getElementById('searchPanel')){document.getElementById('searchPanel').hidden=true;document.getElementById('searchToggleBtn').hidden=false;}
+  rideTimer=setInterval(()=>{updateRideHud();saveActiveRide();},1000);
+  status('Pedalada iniciada. Aguardando posições GPS válidas.');updateRideHud();saveActiveRide();
+}
+function onRidePosition(pos) {
+  const p=L.latLng(pos.coords.latitude,pos.coords.longitude);
+  if(!zoneBounds.contains(p))return;
+  updatePosition(pos);
+  if(!rideActive)return;
+  if(pos.coords.accuracy>35)return;
+  if(lastRidePoint){
+    const delta=map.distance(lastRidePoint,p);
+    const dt=Math.max(1,(pos.timestamp-lastRidePoint.time)/1000);
+    if(delta<4 || delta/dt>12.5)return; // ignora ruído e saltos improváveis (>45 km/h)
+    rideDistanceMeters+=delta;
+  }
+  const item={lat:p.lat,lng:p.lng,time:pos.timestamp||Date.now()};
+  rideCoords.push(item);lastRidePoint={...p,time:item.time};
+  if(rideLine)map.removeLayer(rideLine);
+  if(rideCoords.length>1)rideLine=L.polyline(rideCoords.map(c=>[c.lat,c.lng]),{color:'#00e5ff',weight:5,opacity:.95}).addTo(map);
+  updateRideHud();saveActiveRide();
+}
+function stopRide() {
+  if(!rideActive)return;
+  rideElapsedBefore=elapsedRide();rideActive=false;clearInterval(rideTimer);rideTimer=null;
+  const record={id:Date.now(),date:new Date().toISOString(),duration:rideElapsedBefore,distance:rideDistanceMeters,coords:rideCoords};
+  const rides=readStore(rideStoreKey,[]);rides.unshift(record);writeStore(rideStoreKey,rides.slice(0,100));
+  localStorage.removeItem('urban-pedal-active-v1');
+  const b=document.getElementById('rideButton');b.textContent='▶ INICIAR';b.classList.remove('recording');
+  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=navigator.geolocation.watchPosition(updatePosition,()=>{},{enableHighAccuracy:true,maximumAge:5000});}
+  document.body.classList.remove('pedal-mode');
+  status(`Pedalada salva: ${(rideDistanceMeters/1000).toFixed(2)} km · ${fmtTime(rideElapsedBefore)}.`);
+  rideCoords=[];rideDistanceMeters=0;lastRidePoint=null;rideElapsedBefore=0;rideStartedAt=0;updateRideHud();
+  renderRideHistory();
+}
+document.getElementById('rideButton').addEventListener('click',()=>rideActive?stopRide():startRide());
+
+// Retoma dados temporários após recarga enquanto a gravação estava ativa.
+(function restoreActiveRide(){
+  const a=readStore('urban-pedal-active-v1',null);if(!a)return;
+  rideCoords=a.coords||[];rideDistanceMeters=a.distance||0;rideElapsedBefore=Math.max(0,Date.now()-(a.startedAt||Date.now()));
+  if(rideCoords.length){lastRidePoint={...rideCoords[rideCoords.length-1],time:rideCoords[rideCoords.length-1].time};rideLine=L.polyline(rideCoords.map(c=>[c.lat,c.lng]),{color:'#00e5ff',weight:5,opacity:.95}).addTo(map);}
+  // Não inicia gravação sozinho: exige novo toque para continuar por segurança.
+  updateRideHud();
+})();
+
+// Marcadores pessoais persistidos no aparelho.
+const markerTypes={
+ hole:{label:'Buraco',emoji:'🕳️',color:'#e53935'},
+ danger:{label:'Rua perigosa',emoji:'⚠️',color:'#f57c00'},
+ hill:{label:'Ladeira',emoji:'⛰️',color:'#8e24aa'},
+ stairs:{label:'Escadaria',emoji:'🚧',color:'#546e7a'},
+ avoid:{label:'Não quero ir',emoji:'🚫',color:'#212121'}
+};
+function renderSavedMarkers(){
+  savedMarkers=readStore(markerStoreKey,[]);
+  savedMarkers.forEach(m=>{if(m.layer)map.removeLayer(m.layer);});
+  savedMarkers=savedMarkers.map(m=>({...m,layer:L.marker([m.lat,m.lng],{icon:L.divIcon({className:'saved-marker',html:markerTypes[m.type]?.emoji||'📍',iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map).bindPopup(`<b>${markerTypes[m.type]?.label||'Marcador'}</b><br>${(m.note||'Sem observação').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}<br><button onclick="deleteSavedMarker(${m.id})">Excluir</button>`)}));
+}
+window.deleteSavedMarker=id=>{const arr=readStore(markerStoreKey,[]).filter(m=>m.id!==id);writeStore(markerStoreKey,arr);renderSavedMarkers();};
+document.getElementById('markerModeBtn').addEventListener('click',()=>{document.getElementById('markerMenu').hidden=!document.getElementById('markerMenu').hidden;});
+document.querySelectorAll('[data-marker]').forEach(b=>b.addEventListener('click',()=>{markerMode=b.dataset.marker;document.getElementById('markerMenu').hidden=true;status('Toque no mapa para posicionar: '+markerTypes[markerMode].label+'.');}));
+document.getElementById('cancelMarker').addEventListener('click',()=>{markerMode=null;document.getElementById('markerMenu').hidden=true;});
+const oldMapClick=map._events.click;
+map.on('click',e=>{
+  if(!markerMode)return;
+  const type=markerMode;markerMode=null;
+  const note=prompt('Observação opcional para '+markerTypes[type].label+':','');
+  const arr=readStore(markerStoreKey,[]);
+  arr.push({id:Date.now(),type,lat:e.latlng.lat,lng:e.latlng.lng,note:note||''});
+  writeStore(markerStoreKey,arr);renderSavedMarkers();status('Marcador salvo no mapa.');
+});
+renderSavedMarkers();
+
+// Menu de camadas: base OSM, ruas detalhadas sob o relevo e camada térmica.
+document.getElementById('layersBtn').addEventListener('click',()=>{const m=document.getElementById('layersMenu');m.hidden=!m.hidden;});
+document.getElementById('streetDetailToggle').addEventListener('change',e=>e.target.checked?streetDetail.addTo(map):map.removeLayer(streetDetail));
+document.getElementById('heatToggle').addEventListener('change',e=>{heatOn=e.target.checked;document.getElementById('heatBtn').classList.toggle('active',heatOn);heatOn?elevationLayer.addTo(map):map.removeLayer(elevationLayer);});
+document.getElementById('baseToggle').addEventListener('change',e=>{if(map.hasLayer(topoMap))map.removeLayer(topoMap);if(map.hasLayer(street))map.removeLayer(street);(e.target.checked?street:topoMap).addTo(map);});
+document.getElementById('rotateBtn').addEventListener('click',()=>{
+  if(typeof map.setBearing==='function'){rotateBearing=(rotateBearing+45)%360;map.setBearing(rotateBearing);status('Orientação do mapa: '+rotateBearing+'°.');}
+  else status('Giro do mapa indisponível. Atualize a página e tente novamente.');
+});
+document.getElementById('orientationBtn').addEventListener('click',async()=>{
+  const landscape=screen.orientation?.type?.startsWith('landscape')||false;
+  try{
+    if(screen.orientation?.lock){await screen.orientation.lock(landscape?'portrait':'landscape');document.getElementById('orientationBtn').textContent=landscape?'▯ Retrato':'▱ Paisagem';}
+    else {status('Este Chrome não permite bloquear a orientação neste contexto. Gire o celular manualmente.');}
+  }catch(_){status('Para bloquear a orientação, abra o Urban Pedal instalado pelo Chrome e permita a rotação. Se não aceitar, gire o celular manualmente.');}
+});
+window.addEventListener('orientationchange',()=>setTimeout(()=>map.invalidateSize(),250));
+window.addEventListener('resize',()=>setTimeout(()=>map.invalidateSize(),150));
+
+// Histórico local de pedaladas com visualização do percurso.
+function renderRideHistory(){
+  const box=document.getElementById('historyList'),rides=readStore(rideStoreKey,[]);
+  if(!box)return;
+  box.innerHTML=rides.length?'':'<p>Nenhuma pedalada salva ainda.</p>';
+  rides.forEach(r=>{
+    const row=document.createElement('div');row.className='history-item';
+    const date=new Date(r.date).toLocaleString('pt-BR');
+    row.innerHTML=`<b>${(r.distance/1000).toFixed(2)} km</b> · ${fmtTime(r.duration)}<br><small>${date}</small>`;
+    const view=document.createElement('button');view.textContent='Ver trajeto';view.onclick=()=>{
+      if(window.historyRoute)map.removeLayer(window.historyRoute);
+      if(r.coords?.length>1){window.historyRoute=L.polyline(r.coords.map(c=>[c.lat,c.lng]),{color:'#ff3b30',weight:5}).addTo(map);map.fitBounds(window.historyRoute.getBounds(),{padding:[35,35]});}
+      document.getElementById('historyPanel').hidden=true;status('Trajeto histórico exibido no mapa.');
+    };
+    row.appendChild(view);box.appendChild(row);
+  });
+}
+document.getElementById('historyBtn').addEventListener('click',()=>{renderRideHistory();document.getElementById('historyPanel').hidden=false;});
+document.getElementById('closeHistory').addEventListener('click',()=>document.getElementById('historyPanel').hidden=true);
+renderRideHistory();

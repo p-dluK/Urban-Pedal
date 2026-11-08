@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#132b26">
 <meta name="description" content="GPS de bicicleta com mapa de altitude para a Zona Leste de São Paulo.">
-<title>Altitude Bike GPS</title>
+<title>Urban Pedal</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -56,11 +56,43 @@
 
   <div id="mapStatus" class="map-status" aria-live="polite">Mapa pronto · toque para consultar altitude</div>
 
-  <!-- Botões de Controle Flutuantes -->
+  <!-- Controles compactos do mapa -->
   <div class="map-tools-floating">
     <button id="heatBtn" class="tool-btn active">🌡 Altitude</button>
     <button id="layersBtn" class="tool-btn">Camadas</button>
+    <button id="rotateBtn" class="tool-btn" title="Girar o mapa">⟳ Girar</button>
+    <button id="orientationBtn" class="tool-btn" title="Alternar paisagem/retrato">▱ Paisagem</button>
+    <button id="markerModeBtn" class="tool-btn">📍 Marcador</button>
   </div>
+
+  <div id="layersMenu" class="mini-menu" hidden>
+    <label><input type="checkbox" id="streetDetailToggle" checked> Ruas detalhadas</label>
+    <label><input type="checkbox" id="heatToggle" checked> Mapa térmico</label>
+    <label><input type="checkbox" id="baseToggle" checked> Mapa de ruas</label>
+  </div>
+
+  <div id="pedalHud" class="pedal-hud" aria-live="polite">
+    <span><b id="rideDistance">0,00</b><small> km</small></span>
+    <span><b id="rideTime">00:00:00</b></span>
+    <button id="rideButton" class="ride-button">▶ INICIAR</button>
+  </div>
+
+  <div id="markerMenu" class="mini-menu marker-menu" hidden>
+    <strong>Adicionar marcador</strong>
+    <p>Toque em uma categoria e depois no ponto do mapa.</p>
+    <button data-marker="hole">🕳️ Buraco</button>
+    <button data-marker="danger">⚠️ Rua perigosa</button>
+    <button data-marker="hill">⛰️ Ladeira</button>
+    <button data-marker="stairs">🚧 Escadaria</button>
+    <button data-marker="avoid">🚫 Não quero ir</button>
+    <button id="cancelMarker">Cancelar</button>
+  </div>
+
+  <button id="historyBtn" class="history-button">Histórico</button>
+  <section id="historyPanel" class="history-panel" hidden>
+    <div class="panel-header"><strong>HISTÓRICO DE PEDALADAS</strong><button id="closeHistory" class="close-search">×</button></div>
+    <div id="historyList"></div>
+  </section>
 
   <!-- Legenda Flutuante -->
   <div id="legend" class="legend-floating">
@@ -69,8 +101,8 @@
   </div>
 </main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>\n<script src="https://unpkg.com/@tomickigrzegorz/leaflet-rotate@0.2.8/dist/leaflet-rotate.umd.min.js"></script>
 <script src="topo-layer.js"></script>
-<script src="app.js"></script>
+<script src="app.js"></script>\n<script>if ("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));</script>
 </body>
 </html>

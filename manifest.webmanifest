@@ -1,11 +1,11 @@
 {
-  "name": "Altitude Bike GPS",
-  "short_name": "Altitude Bike",
+  "name": "Urban Pedal",
+  "short_name": "Urban Pedal",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#102d25",
   "theme_color": "#102d25",
-  "orientation": "portrait",
+  "orientation": "any",
   "icons": [
     {
       "src": "icon-192.png",
