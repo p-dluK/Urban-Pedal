@@ -19,7 +19,6 @@
   <!-- Atalho para abrir a busca sem ocupar o mapa -->
   <button id="searchToggleBtn" class="search-toggle" aria-label="Abrir pesquisa de endereço" title="Pesquisar endereço">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
-    <span>Buscar</span>
   </button>
 
   <!-- Janela de pesquisa: recolhida por padrão -->
@@ -54,15 +53,17 @@
     <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
 
-  <div id="mapStatus" class="map-status" aria-live="polite">Mapa pronto · toque para consultar altitude</div>
-
-  <!-- Controles compactos do mapa -->
-  <div class="map-tools-floating">
-    <button id="heatBtn" class="tool-btn active">🌡 Altitude</button>
-    <button id="layersBtn" class="tool-btn">Camadas</button>
-    <button id="rotateBtn" class="tool-btn" title="Girar o mapa">⟳ Girar</button>
-    <button id="orientationBtn" class="tool-btn" title="Alternar paisagem/retrato">▱ Paisagem</button>
-    <button id="markerModeBtn" class="tool-btn">📍 Marcador</button>
+  <!-- Ferramentas recolhidas no botão de configurações -->
+  <div class="settings-wrap">
+    <button id="settingsToggleBtn" class="settings-toggle" aria-label="Abrir configurações" title="Configurações">⚙</button>
+    <div id="settingsMenu" class="settings-menu" hidden>
+      <button id="heatBtn" class="tool-btn active">🌡 Altitude</button>
+      <button id="layersBtn" class="tool-btn">Camadas</button>
+      <button id="rotateBtn" class="tool-btn" title="Girar o mapa">⟳ Girar</button>
+      <button id="orientationBtn" class="tool-btn" title="Alternar paisagem/retrato">▱ Paisagem</button>
+      <button id="markerModeBtn" class="tool-btn">📍 Marcador</button>
+      <button id="historyBtn" class="tool-btn">Histórico</button>
+    </div>
   </div>
 
   <div id="layersMenu" class="mini-menu" hidden>
@@ -88,17 +89,11 @@
     <button id="cancelMarker">Cancelar</button>
   </div>
 
-  <button id="historyBtn" class="history-button">Histórico</button>
   <section id="historyPanel" class="history-panel" hidden>
     <div class="panel-header"><strong>HISTÓRICO DE PEDALADAS</strong><button id="closeHistory" class="close-search">×</button></div>
     <div id="historyList"></div>
   </section>
 
-  <!-- Legenda Flutuante -->
-  <div id="legend" class="legend-floating">
-    <b>ALTITUDE</b><div class="gradient"></div>
-    <div class="legend-labels"><span>baixa (722m)</span><span>alta (820m)</span></div>
-  </div>
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>\n<script src="https://unpkg.com/@tomickigrzegorz/leaflet-rotate@0.2.8/dist/leaflet-rotate.umd.min.js"></script>

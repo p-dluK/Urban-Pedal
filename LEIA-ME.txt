@@ -12,3 +12,11 @@ Recursos adicionados:
 - Botão para solicitar orientação paisagem/retrato quando suportado pelo Chrome instalado.
 - Interface compacta durante o modo Pedal.
 Observação: o rastreamento depende da permissão/localização do navegador e pode ser limitado pelo Android quando o app fica em segundo plano ou a tela é bloqueada.
+
+
+ATUALIZAÇÃO VISUAL v6
+- Legenda de altitude removida da tela principal.
+- Pesquisa reduzida a um botão de lupa.
+- Ferramentas e histórico recolhidos no menu de configurações (engrenagem).
+- Mensagem flutuante de consulta de altitude removida do canto inferior esquerdo.
+- Exclusão de marcadores corrigida com identificação segura e atualização dos layers no mapa.

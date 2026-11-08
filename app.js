@@ -41,7 +41,13 @@ const streetDetail = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z
 let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null;
 
 const $ = id => document.getElementById(id);
-const status = t => { $('status').textContent = t; if ($('mapStatus')) $('mapStatus').textContent = t; };
+const status = t => { if ($('status')) $('status').textContent = t; };
+
+// Menu geral de ferramentas: controles ocultos até tocar na engrenagem.
+$('settingsToggleBtn').addEventListener('click', () => {
+  const menu = $('settingsMenu'); menu.hidden = !menu.hidden;
+  $('settingsToggleBtn').setAttribute('aria-expanded', String(!menu.hidden));
+});
 
 // A busca começa recolhida para deixar o mapa térmico ocupar a tela.
 $('searchToggleBtn').onclick = () => { $('searchPanel').hidden = false; $('searchToggleBtn').hidden = true; };
@@ -338,11 +344,25 @@ const markerTypes={
  avoid:{label:'Não quero ir',emoji:'🚫',color:'#212121'}
 };
 function renderSavedMarkers(){
-  savedMarkers=readStore(markerStoreKey,[]);
-  savedMarkers.forEach(m=>{if(m.layer)map.removeLayer(m.layer);});
-  savedMarkers=savedMarkers.map(m=>({...m,layer:L.marker([m.lat,m.lng],{icon:L.divIcon({className:'saved-marker',html:markerTypes[m.type]?.emoji||'📍',iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map).bindPopup(`<b>${markerTypes[m.type]?.label||'Marcador'}</b><br>${(m.note||'Sem observação').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}<br><button onclick="deleteSavedMarker(${m.id})">Excluir</button>`)}));
+  // Remove layers antigos antes de redesenhar para evitar duplicatas e referências obsoletas.
+  savedMarkers.forEach(m=>{if(m.layer && map.hasLayer(m.layer)) map.removeLayer(m.layer);});
+  const records=readStore(markerStoreKey,[]);
+  savedMarkers=records.map(m=>{
+    const marker=L.marker([m.lat,m.lng],{icon:L.divIcon({className:'saved-marker',html:markerTypes[m.type]?.emoji||'📍',iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map);
+    const safeNote=(m.note||'Sem observação').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    marker.bindPopup(`<div class="saved-marker-popup"><b>${markerTypes[m.type]?.label||'Marcador'}</b><br>${safeNote}<br><button type="button" class="delete-saved-marker" data-marker-id="${String(m.id)}">Excluir marcador</button></div>`);
+    marker.on('popupopen',ev=>{
+      const btn=ev.popup.getElement()?.querySelector('.delete-saved-marker'); if(!btn)return;
+      L.DomEvent.disableClickPropagation(btn);
+      btn.addEventListener('click',()=>{
+        const id=btn.getAttribute('data-marker-id');
+        const next=readStore(markerStoreKey,[]).filter(item=>String(item.id)!==String(id));
+        writeStore(markerStoreKey,next); renderSavedMarkers(); map.closePopup(); status('Marcador excluído.');
+      },{once:true});
+    });
+    return {...m,layer:marker};
+  });
 }
-window.deleteSavedMarker=id=>{const arr=readStore(markerStoreKey,[]).filter(m=>m.id!==id);writeStore(markerStoreKey,arr);renderSavedMarkers();};
 document.getElementById('markerModeBtn').addEventListener('click',()=>{document.getElementById('markerMenu').hidden=!document.getElementById('markerMenu').hidden;});
 document.querySelectorAll('[data-marker]').forEach(b=>b.addEventListener('click',()=>{markerMode=b.dataset.marker;document.getElementById('markerMenu').hidden=true;status('Toque no mapa para posicionar: '+markerTypes[markerMode].label+'.');}));
 document.getElementById('cancelMarker').addEventListener('click',()=>{markerMode=null;document.getElementById('markerMenu').hidden=true;});
