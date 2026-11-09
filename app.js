@@ -283,6 +283,47 @@ function saveActiveRide() {
   if(!rideActive)return;
   writeStore('urban-pedal-active-v1',{startedAt:Date.now()-elapsedRide(),coords:rideCoords,distance:rideDistanceMeters,deliveries:rideDeliveries,activeDelivery,paused:ridePaused,elapsed:elapsedRide()});
 }
+
+// Controle de estado sequencial dos botões de entrega
+function updateDeliveryStepState() {
+  const btnAccept = document.getElementById('acceptDeliveryBtn');
+  const btnRetire = document.getElementById('retireDeliveryBtn');
+  const btnDeliver = document.getElementById('deliverDeliveryBtn');
+  if(!btnAccept || !btnRetire || !btnDeliver) return;
+
+  if(!rideActive || ridePaused) {
+    // Se o pedal não estiver ativo ou estiver pausado, desativa tudo
+    btnAccept.disabled = true; btnAccept.style.opacity = '0.5';
+    btnRetire.disabled = true; btnRetire.style.opacity = '0.5';
+    btnDeliver.disabled = true; btnDeliver.style.opacity = '0.5';
+    return;
+  }
+
+  // Se não há entrega ativa iniciada (ou acabou de concluir uma)
+  if(!activeDelivery) {
+    btnAccept.disabled = false; btnAccept.style.opacity = '1';
+    btnRetire.disabled = true; btnRetire.style.opacity = '0.5';
+    btnDeliver.disabled = true; btnDeliver.style.opacity = '0.5';
+  } else {
+    // Temos uma entrega em andamento:
+    if(!activeDelivery.accepted) {
+      btnAccept.disabled = false; btnAccept.style.opacity = '1';
+      btnRetire.disabled = true; btnRetire.style.opacity = '0.5';
+      btnDeliver.disabled = true; btnDeliver.style.opacity = '0.5';
+    } else if(!activeDelivery.retired) {
+      // Já aceitou, mas ainda não retirou
+      btnAccept.disabled = true; btnAccept.style.opacity = '0.5';
+      btnRetire.disabled = false; btnRetire.style.opacity = '1';
+      btnDeliver.disabled = true; btnDeliver.style.opacity = '0.5';
+    } else if(!activeDelivery.delivered) {
+      // Já retirou, mas ainda não entregou
+      btnAccept.disabled = true; btnAccept.style.opacity = '0.5';
+      btnRetire.disabled = true; btnRetire.style.opacity = '0.5';
+      btnDeliver.disabled = false; btnDeliver.style.opacity = '1';
+    }
+  }
+}
+
 function setRideControls() {
   const active=rideActive;
   document.getElementById('rideActions').hidden=!active;
@@ -291,7 +332,9 @@ function setRideControls() {
   document.getElementById('pauseRideBtn').textContent=ridePaused?'▶':'Ⅱ';
   document.getElementById('pauseRideBtn').setAttribute('aria-label',ridePaused?'Retomar gravação':'Pausar gravação');
   document.getElementById('pauseRideBtn').title=ridePaused?'Retomar':'Pausar';
+  updateDeliveryStepState();
 }
+
 function startRide() {
   if(!navigator.geolocation){status('GPS não disponível.');return;}
   if(watchId!==null)navigator.geolocation.clearWatch(watchId);
@@ -300,8 +343,9 @@ function startRide() {
   if(document.getElementById('searchPanel')){document.getElementById('searchPanel').hidden=true;document.getElementById('searchToggleBtn').hidden=false;}
   setRideControls();
   rideTimer=setInterval(()=>{updateRideHud();saveActiveRide();},1000);
-  status('Modo Pedal iniciado.');updateRideHud();saveActiveRide();
+  status('Modo Pedal iniciado. Aceite a primeira entrega.');updateRideHud();saveActiveRide();
 }
+
 function onRidePosition(pos) {
   const p=L.latLng(pos.coords.latitude,pos.coords.longitude);
   if(!zoneBounds.contains(p))return;
@@ -319,48 +363,91 @@ function onRidePosition(pos) {
   if(rideCoords.length>1)rideLine=L.polyline(rideCoords.map(c=>[c.lat,c.lng]),{color:'#00e5ff',weight:5,opacity:.95}).addTo(map);
   updateRideHud();saveActiveRide();
 }
+
 function currentRideLocation() {
   if(userMarker && map.hasLayer(userMarker)) return userMarker.getLatLng();
   if(lastRidePoint) return L.latLng(lastRidePoint.lat,lastRidePoint.lng);
   if(rideCoords.length){const p=rideCoords[rideCoords.length-1];return L.latLng(p.lat,p.lng);}
   return null;
 }
+
 function eventPoint() {
   const p=currentRideLocation();
   if(!p){status('Aguardando uma posição GPS válida para registrar.');return null;}
   return {lat:p.lat,lng:p.lng,time:Date.now()};
 }
+
 function acceptDelivery() {
   if(!rideActive||ridePaused){status('Retome o Modo Pedal para registrar uma entrega.');return;}
-  if(activeDelivery){status('Já existe uma entrega em andamento. Registre a retirada ou entrega primeiro.');return;}
+  if(activeDelivery){status('Já existe uma entrega em andamento.');return;}
   const point=eventPoint();if(!point)return;
   activeDelivery={id:Date.now(),accepted:point,retired:null,delivered:null,value:null};
-  rideDeliveries.push(activeDelivery);saveActiveRide();status('Entrega aceita e registrada.');
+  rideDeliveries.push(activeDelivery);
+  saveActiveRide();
+  updateDeliveryStepState();
+  status('Entrega aceita. Siga para a retirada e toque em RETIREI.');
 }
+
 function retireDelivery() {
   if(!rideActive||ridePaused){status('Retome o Modo Pedal para registrar a retirada.');return;}
   if(!activeDelivery){status('Toque em ACEITEI antes de registrar a retirada.');return;}
   if(activeDelivery.retired){status('A retirada desta entrega já foi registrada.');return;}
   const point=eventPoint();if(!point)return;
-  activeDelivery.retired=point;saveActiveRide();status('Retirada registrada.');
+  activeDelivery.retired=point;
+  saveActiveRide();
+  updateDeliveryStepState();
+  status('Retirada registrada. Siga para o destino e toque em ENTREGUEI.');
 }
+
 function deliverDelivery() {
   if(!rideActive||ridePaused){status('Retome o Modo Pedal para registrar a entrega.');return;}
   if(!activeDelivery){status('Toque em ACEITEI antes de registrar a entrega.');return;}
   const point=eventPoint();if(!point)return;
-  activeDelivery.delivered=point;activeDelivery=null;saveActiveRide();status('Entrega concluída e registrada no histórico.');
+  activeDelivery.delivered=point;
+  
+  // Salva imediatamente no histórico ativo (salva o registro atualizado no localStorage de histórico)
+  const tempRecord={id:Date.now(),date:new Date().toISOString(),duration:elapsedRide(),distance:rideDistanceMeters,coords:rideCoords,deliveries:[...rideDeliveries]};
+  const rides=readStore(rideStoreKey,[]);
+  
+  // Se já houver um registro de pedalada atual no topo ou criamos um novo bloco para esta sessão:
+  if(rides.length && rides[0].activeSession) {
+    rides[0].deliveries = [...rideDeliveries];
+    rides[0].distance = rideDistanceMeters;
+    rides[0].duration = elapsedRide();
+  } else {
+    tempRecord.activeSession = true;
+    rides.unshift(tempRecord);
+  }
+  writeStore(rideStoreKey,rides.slice(0,100));
+  
+  // Reseta para a próxima entrega mantendo o Modo Pedal ativo
+  activeDelivery = null;
+  saveActiveRide();
+  updateDeliveryStepState();
+  renderRideHistory();
+  status('Entrega concluída! Já inserida no histórico. Pronto para a próxima.');
 }
+
 function toggleRidePause() {
   if(!rideActive)return;
   if(!ridePaused){rideElapsedBefore=elapsedRide();ridePaused=true;status('Registro pausado.');}
   else {ridePaused=false;rideStartedAt=Date.now();status('Registro retomado.');}
   setRideControls();updateRideHud();saveActiveRide();
 }
+
 function stopRide() {
   if(!rideActive)return;
   rideElapsedBefore=elapsedRide();rideActive=false;ridePaused=false;clearInterval(rideTimer);rideTimer=null;
-  const record={id:Date.now(),date:new Date().toISOString(),duration:rideElapsedBefore,distance:rideDistanceMeters,coords:rideCoords,deliveries:rideDeliveries};
-  const rides=readStore(rideStoreKey,[]);rides.unshift(record);writeStore(rideStoreKey,rides.slice(0,100));
+  const rides=readStore(rideStoreKey,[]);
+  // Remove a flag de sessão ativa e consolida
+  const index = rides.findIndex(x => x.activeSession);
+  if(index !== -1) {
+    delete rides[index].activeSession;
+  } else {
+    const record={id:Date.now(),date:new Date().toISOString(),duration:rideElapsedBefore,distance:rideDistanceMeters,coords:rideCoords,deliveries:rideDeliveries};
+    rides.unshift(record);
+  }
+  writeStore(rideStoreKey,rides.slice(0,100));
   localStorage.removeItem('urban-pedal-active-v1');
   if(rideLine){map.removeLayer(rideLine);rideLine=null;}
   if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=navigator.geolocation.watchPosition(updatePosition,()=>{},{enableHighAccuracy:true,maximumAge:5000});}
@@ -368,6 +455,7 @@ function stopRide() {
   status(`Pedalada salva: ${(rideDistanceMeters/1000).toFixed(2)} km · ${fmtTime(rideElapsedBefore)}.`);
   rideCoords=[];rideDistanceMeters=0;lastRidePoint=null;rideElapsedBefore=0;rideStartedAt=0;rideDeliveries=[];activeDelivery=null;updateRideHud();renderRideHistory();
 }
+
 document.getElementById('rideButton').addEventListener('click',startRide);
 document.getElementById('endRideBtn').addEventListener('click',stopRide);
 document.getElementById('pauseRideBtn').addEventListener('click',toggleRidePause);
@@ -381,6 +469,7 @@ document.getElementById('deliverDeliveryBtn').addEventListener('click',deliverDe
   rideDeliveries=a.deliveries||[];activeDelivery=a.activeDelivery||null;
   if(rideCoords.length){lastRidePoint={...rideCoords[rideCoords.length-1],time:rideCoords[rideCoords.length-1].time};rideLine=L.polyline(rideCoords.map(c=>[c.lat,c.lng]),{color:'#00e5ff',weight:5,opacity:.95}).addTo(map);}
   updateRideHud();
+  if(rideActive) updateDeliveryStepState();
 })();
 
 // Marcadores pessoais persistidos no aparelho.
@@ -392,7 +481,6 @@ const markerTypes={
  avoid:{label:'Não quero ir',emoji:'🚫',color:'#212121'}
 };
 function renderSavedMarkers(){
-  // Remove layers antigos antes de redesenhar para evitar duplicatas e referências obsoletas.
   savedMarkers.forEach(m=>{if(m.layer && map.hasLayer(m.layer)) map.removeLayer(m.layer);});
   const records=readStore(markerStoreKey,[]);
   savedMarkers=records.map(m=>{
@@ -414,7 +502,7 @@ function renderSavedMarkers(){
 document.getElementById('markerModeBtn').addEventListener('click',()=>{document.getElementById('markerMenu').hidden=!document.getElementById('markerMenu').hidden;});
 document.querySelectorAll('[data-marker]').forEach(b=>b.addEventListener('click',()=>{markerMode=b.dataset.marker;document.getElementById('markerMenu').hidden=true;status('Toque no mapa para posicionar: '+markerTypes[markerMode].label+'.');}));
 document.getElementById('cancelMarker').addEventListener('click',()=>{markerMode=null;document.getElementById('markerMenu').hidden=true;});
-const oldMapClick=map._events.click;
+
 map.on('click',e=>{
   if(!markerMode)return;
   const type=markerMode;markerMode=null;
@@ -439,7 +527,7 @@ document.getElementById('orientationBtn').addEventListener('click',async()=>{
   try{
     if(screen.orientation?.lock){await screen.orientation.lock(landscape?'portrait':'landscape');document.getElementById('orientationBtn').textContent=landscape?'▯ Retrato':'▱ Paisagem';}
     else {status('Este Chrome não permite bloquear a orientação neste contexto. Gire o celular manualmente.');}
-  }catch(_){status('Para bloquear a orientação, abra o Urban Pedal instalado pelo Chrome e permita a rotação. Se não aceitar, gire o celular manualmente.');}
+  }catch(_){status('Para bloquear a orientação, abra o Urban Pedal instalado pelo Chrome e permita a rotação.');}
 });
 window.addEventListener('orientationchange',()=>setTimeout(()=>map.invalidateSize(),250));
 window.addEventListener('resize',()=>setTimeout(()=>map.invalidateSize(),150));
