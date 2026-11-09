@@ -1,7 +1,113 @@
-<!-- Atalho para abrir a busca sem ocupar o mapa -->
-<button id="searchToggleBtn" class="search-toggle" aria-label="Abrir pesquisa de endereço" title="Pesquisar endereço">
-  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
-</button>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#132b26">
+<meta name="description" content="GPS de bicicleta com mapa de altitude para a Zona Leste de São Paulo.">
+<title>Urban Pedal</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <!-- Mapa Fullscreen -->
+  <div id="map" aria-label="Mapa interativo"></div>
 
-<!-- Botão de GPS fixo do lado de fora, ao lado da lupa -->
-<button id="quickLocateBtn" class="quick-locate-btn" aria-label="Minha localização GPS" title="Minha localização GPS">📍</button>
+  <!-- Atalho para abrir a busca sem ocupar o mapa -->
+  <button id="searchToggleBtn" class="search-toggle" aria-label="Abrir pesquisa de endereço" title="Pesquisar endereço">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+  </button>
+
+  <!-- Botão de GPS fixo do lado de fora, ao lado da lupa -->
+  <button id="quickLocateBtn" class="quick-locate-btn" aria-label="Minha localização GPS" title="Minha localização GPS">📍</button>
+
+  <!-- Janela de pesquisa: recolhida por padrão -->
+  <section class="floating-panel" id="searchPanel" hidden>
+    <div class="panel-header">
+      <strong>ALTITUDE <span>BIKE GPS</span></strong>
+      <div class="panel-header-actions">
+        <button id="closeSearchBtn" class="close-search" title="Recolher pesquisa" aria-label="Recolher pesquisa">×</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="origin">PONTO A · ORIGEM</label>
+      <div class="inputrow"><input id="origin" placeholder="Use minha localização ou toque no mapa"><button id="originHere" class="smallbtn">GPS</button></div>
+    </div>
+    <div class="field" style="margin-top:8px;">
+      <label for="destination">PONTO B · DESTINO</label>
+      <div class="inputrow"><input id="destination" placeholder="Digite um endereço ou local"><button id="pickDest" class="smallbtn">MAPA</button></div>
+      <div id="suggestions" class="suggestions"></div>
+    </div>
+    <div class="actions" style="margin-top:12px;">
+      <button id="routeBtn" class="primary">CALCULAR ROTA</button>
+      <button id="clearBtn" class="secondary">LIMPAR</button>
+    </div>
+    <div id="status" class="status">Pronto. Defina origem e destino para começar.</div>
+    <div id="routeInfo" class="route-info" hidden></div>
+    <div id="elevationInfo" class="elevation-card" hidden>
+      <div class="elev-head"><b>COMPARADOR DE ALTITUDE</b><span id="elevSource">Mapzen / OpenTopoData</span></div>
+      <div class="elev-grid"><div><small>SUA POSIÇÃO</small><strong id="currentElev">— m</strong></div><div><small>PONTO TOCADO</small><strong id="selectedElev">— m</strong></div></div>
+      <div class="elev-diff"><small>DIFERENÇA</small><strong id="elevDiff">Toque em um ponto do mapa</strong></div>
+    </div>
+    <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
+  </section>
+
+  <!-- Ferramentas recolhidas no botão de engrenagem -->
+  <div class="settings-wrap">
+    <button id="settingsToggleBtn" class="settings-toggle" aria-label="Abrir configurações" title="Configurações">⚙</button>
+    <div id="settingsMenu" class="settings-menu" hidden>
+      <button id="heatBtn" class="tool-btn active">🌡 Altitude</button>
+      <button id="layersBtn" class="tool-btn">Camadas</button>
+      <button id="rotateBtn" class="tool-btn" title="Girar o mapa">⟳ Girar</button>
+      <button id="orientationBtn" class="tool-btn" title="Alternar paisagem/retrato">▱ Paisagem</button>
+      <button id="markerModeBtn" class="tool-btn">📍 Marcador</button>
+      <button id="historyBtn" class="tool-btn">Histórico</button>
+    </div>
+  </div>
+
+  <div id="layersMenu" class="mini-menu" hidden>
+    <label><input type="checkbox" id="streetDetailToggle" checked> Ruas detalhadas</label>
+    <label><input type="checkbox" id="heatToggle" checked> Mapa térmico</label>
+    <label><input type="checkbox" id="baseToggle" checked> Mapa de ruas</label>
+  </div>
+
+  <div id="pedalHud" class="pedal-hud" aria-live="polite">
+    <button id="rideButton" class="ride-button start-ride">▶ INICIAR</button>
+    <button id="endRideBtn" class="ride-action end-action" aria-label="Encerrar Modo Pedal" title="Encerrar" hidden>■</button>
+    <div id="rideStats" class="ride-stats"><span><b id="rideDistance">0,00</b><small> km</small></span><span><b id="rideTime">00:00:00</b></span></div>
+    <div id="rideActions" class="ride-actions" hidden>
+      <button id="acceptDeliveryBtn" class="ride-action accept-action">ACEITEI</button>
+      <button id="retireDeliveryBtn" class="ride-action retire-action">RETIREI</button>
+      <button id="deliverDeliveryBtn" class="ride-action deliver-action">ENTREGUEI</button>
+      <button id="pauseRideBtn" class="ride-action pause-action" aria-label="Pausar gravação" title="Pausar">Ⅱ</button>
+    </div>
+  </div>
+
+  <div id="markerMenu" class="mini-menu marker-menu" hidden>
+    <strong>Adicionar marcador</strong>
+    <p>Toque em uma categoria e depois no ponto do mapa.</p>
+    <button data-marker="hole">🕳️ Buraco</button>
+    <button data-marker="danger">⚠️ Rua perigosa</button>
+    <button data-marker="hill">⛰️ Ladeira</button>
+    <button data-marker="stairs">🚧 Escadaria</button>
+    <button data-marker="avoid">🚫 Não quero ir</button>
+    <button id="cancelMarker">Cancelar</button>
+  </div>
+
+  <section id="historyPanel" class="history-panel" hidden>
+    <div class="panel-header"><strong>HISTÓRICO DE PEDALADAS</strong><button id="closeHistory" class="close-search">×</button></div>
+    <div id="historyList"></div>
+  </section>
+
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@tomickigrzegorz/leaflet-rotate@0.2.8/dist/leaflet-rotate.umd.min.js"></script>
+<script src="topo-layer.js"></script>
+<script src="app.js"></script>
+<script>if ("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));</script>
+</body>
+</html>

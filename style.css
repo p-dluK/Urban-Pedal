@@ -1,2 +1,100 @@
-.quick-locate-btn{position:absolute;top:max(14px,env(safe-area-inset-top));left:68px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;background:rgba(255,255,255,.96);color:#153b2b;font-weight:850;font-size:16px;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer;}
-body.pedal-mode .quick-locate-btn{top:max(7px,env(safe-area-inset-top));left:54px;width:38px;height:38px;}
+*{box-sizing:border-box}
+:root{--dark:#102d25;--green:#1d8b50;--muted:#65736d}
+html,body{margin:0;width:100%;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#101b17;color:#17251f;overflow:hidden}
+body{display:flex;flex-direction:column}
+main{position:relative;width:100vw;height:100dvh;min-height:100%;overflow:hidden}
+#map{position:absolute;inset:0;width:100%;height:100%;background:#dce9df;z-index:1}
+
+.street-detail{mix-blend-mode:multiply;filter:contrast(1.22) saturate(.72)}
+.leaflet-tile-pane{isolation:isolate}
+
+.search-toggle{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;padding:0;background:rgba(255,255,255,.96);color:#153b2b;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
+.search-toggle svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.search-toggle[hidden]{display:none}
+
+/* Botão de GPS rápido ao lado da lupa */
+.quick-locate-btn{position:absolute;top:max(14px,env(safe-area-inset-top));left:66px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;background:rgba(255,255,255,.96);color:#153b2b;font-weight:850;font-size:18px;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
+body.pedal-mode .quick-locate-btn{top:max(7px,env(safe-area-inset-top));left:54px;width:38px;height:38px;font-size:15px}
+
+.floating-panel{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;z-index:1200;width:360px;max-width:calc(100vw - 28px);max-height:calc(100dvh - 28px - env(safe-area-inset-bottom));background:rgba(255,255,255,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-radius:17px;padding:15px;box-shadow:0 8px 32px rgba(0,0,0,.22);overflow-y:auto}
+.floating-panel[hidden]{display:none}
+.panel-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;color:var(--dark);font-size:15px}
+.panel-header strong span{color:#249c5d}
+.panel-header-actions{display:flex;align-items:center;gap:7px}
+.close-search{width:34px;height:34px;border:0;border-radius:10px;background:#edf3ef;color:#183a2b;font-size:25px;line-height:1;cursor:pointer}
+
+.field{margin-bottom:9px}
+label{display:block;font-size:10px;letter-spacing:1px;font-weight:800;color:#557065;margin-bottom:4px}
+.inputrow{display:flex;gap:7px}
+input{min-width:0;flex:1;border:1px solid #d6e0da;border-radius:9px;padding:11px;font-size:14px;background:#fbfdfb}
+.smallbtn{border:0;background:#e7f3eb;color:#1b6844;border-radius:9px;padding:0 13px;min-height:34px;font-weight:800;font-size:11px;cursor:pointer}
+.actions{display:flex;gap:8px}
+.primary,.secondary{border:0;border-radius:10px;padding:13px;font-weight:900;letter-spacing:.5px;cursor:pointer;min-height:44px}
+.primary{background:#176b47;color:white;flex:1}
+.secondary{background:#edf1ee;color:#33443b}
+.status{font-size:12px;color:#46574e;padding:9px 2px}
+.route-info{background:#eff8f1;border:1px solid #d5eadb;padding:10px;border-radius:10px;font-size:12px;line-height:1.5}
+.hint{font-size:10px;color:#77847d;line-height:1.4;margin-top:5px}
+.suggestions{position:relative;z-index:800}
+.suggestions button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #eee;background:#fff;padding:10px;font-size:12px;cursor:pointer}
+.elevation-card{background:#f0f7f1;border:1px solid #d4e8d8;border-radius:11px;padding:11px;margin:8px 0}
+.elev-head{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:#426251;letter-spacing:.4px}
+.elev-head span{font-weight:500;color:#78877e;text-align:right}
+.elev-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:11px 0}
+.elev-grid div{background:#fff;border-radius:8px;padding:9px}
+.elev-grid small,.elev-diff small{display:block;color:#718078;font-size:9px;font-weight:800;letter-spacing:.5px}
+.elev-grid strong{display:block;font-size:19px;margin-top:3px;color:#203c2e}
+.elev-diff{border-top:1px solid #d6e7d9;padding-top:8px}
+.elev-diff strong{display:block;font-size:19px;color:#176b47;margin-top:3px}
+
+.settings-wrap{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;z-index:1500}
+.settings-toggle{width:44px;height:44px;border:1px solid rgba(255,255,255,.75);border-radius:13px;background:rgba(255,255,255,.96);color:#17392b;font-size:24px;font-weight:800;box-shadow:0 4px 16px #0003;cursor:pointer}
+.settings-menu{display:flex;flex-direction:column;align-items:stretch;gap:6px;position:absolute;right:0;top:52px;min-width:158px;padding:9px;border-radius:13px;background:rgba(255,255,255,.97);box-shadow:0 5px 20px #0004}
+.settings-menu[hidden]{display:none}
+.settings-menu .tool-btn{text-align:left;white-space:nowrap}
+.settings-menu #historyBtn{border:0;border-radius:10px;padding:8px 10px;min-height:34px;background:#edf3ef;color:#1c3028;font-size:11px;font-weight:800;text-align:left;box-shadow:none}
+
+.mini-menu{position:absolute;z-index:1300;right:170px;top:64px;min-width:175px;padding:10px;border-radius:12px;background:rgba(255,255,255,.97);box-shadow:0 5px 20px #0003;color:#18372a;font-size:12px}
+.mini-menu[hidden],.history-panel[hidden]{display:none}
+.mini-menu label{display:flex;align-items:center;gap:7px;margin:7px 0;font-size:12px;letter-spacing:0;color:#25382e}
+.mini-menu button{display:block;width:100%;text-align:left;border:0;background:#f0f5f1;padding:8px;border-radius:7px;margin-top:5px;font-size:12px}
+.marker-menu{top:64px;right:170px;max-height:60vh;overflow:auto}
+
+.history-panel{position:absolute;z-index:1400;left:12px;top:108px;width:min(340px,calc(100vw - 24px));max-height:65vh;overflow:auto;background:#fffffff2;border-radius:14px;padding:12px;box-shadow:0 8px 28px #0004}
+.history-item{padding:10px;border-bottom:1px solid #e2e9e4;font-size:12px}
+.history-item button{margin-top:6px;border:0;border-radius:7px;padding:6px 9px;background:#e8f2eb;color:#185b3a;font-weight:800}
+
+.saved-marker{font-size:20px;line-height:24px;text-align:center;text-shadow:0 1px 3px #fff}
+.saved-marker-popup .delete-saved-marker{margin-top:8px;border:0;border-radius:8px;padding:8px 12px;background:#b83232;color:#fff;font-weight:800;cursor:pointer}
+
+body.pedal-mode .search-toggle{top:max(7px,env(safe-area-inset-top));left:8px;width:38px;height:38px;min-height:38px}
+body.pedal-mode .settings-wrap{top:max(7px,env(safe-area-inset-top));right:8px}
+
+.pedal-hud{position:absolute;z-index:1050;top:max(7px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:11px;background:rgba(12,30,25,.82);color:#fff;box-shadow:0 3px 12px #0003;font-size:12px;white-space:nowrap;max-width:calc(100vw - 16px)}
+.ride-stats{display:flex;align-items:center;gap:10px}
+.ride-stats span{display:flex;align-items:baseline;gap:2px;font-variant-numeric:tabular-nums}
+.ride-stats b{font-size:13px}
+.ride-stats small{font-size:9px;opacity:.8}
+.ride-actions{display:flex;align-items:center;gap:4px}
+.ride-actions[hidden],.ride-button[hidden]{display:none!important}
+.ride-action{border:0;border-radius:7px;padding:6px 8px;min-height:29px;font-size:9px;font-weight:900;white-space:nowrap;color:#fff;cursor:pointer}
+.accept-action{background:#1677d2}
+.retire-action{background:#e5b600;color:#171717}
+.deliver-action{background:#16834a}
+.pause-action,.end-action{background:#d92d20;font-size:15px;min-width:30px;padding:4px 7px}
+.ride-button{border:0;border-radius:8px;padding:7px 10px;background:#16834d;color:white;font-weight:900;font-size:10px;min-height:30px}
+.ride-event-marker{font-size:24px;line-height:30px;text-align:center;text-shadow:0 1px 4px #fff,0 1px 5px #0008}
+
+.history-deliveries{margin:7px 0;display:flex;flex-direction:column;gap:5px}
+.history-delivery{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 7px;background:#f1f5f2;border-radius:7px;font-size:10px}
+.history-delivery .delivery-value{margin:0;padding:5px 9px;min-width:34px;background:#e5f2e8;color:#176b47}
+
+.leaflet-control-zoom{display:none!important}
+
+@media (max-width:600px){
+  .pedal-hud{gap:4px;padding:4px 5px}
+  .ride-action{padding:5px 6px;font-size:8px;min-height:26px}
+  .pause-action,.end-action{min-width:27px;min-height:26px;font-size:14px}
+  .ride-stats{gap:8px}
+  .ride-stats b{font-size:11px}
+}

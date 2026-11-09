@@ -14,7 +14,6 @@ const map = L.map('map', {
   maxZoom: 18
 }).setView([-23.512, -46.480], 13);
 
-// Ordem visual: mapa base < ruas detalhadas < mapa térmico.
 map.createPane('streetDetailPane');
 map.getPane('streetDetailPane').style.zIndex = 250;
 map.createPane('elevationPane');
@@ -30,10 +29,8 @@ const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', 
   attribution: '© OpenTopoMap (CC-BY-SA)'
 });
 
-// Camada topográfica hipsométrica em tempo real
 const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.78, pane: 'elevationPane' }).addTo(map);
 
-// Ruas detalhadas por cima do mapa térmico, com mistura multiply para preservar as cores do relevo.
 const streetDetail = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   maxZoom: 19, attribution: '© OpenStreetMap contributors © CARTO', opacity: 0.78, className: 'street-detail', subdomains: 'abcd', pane: 'streetDetailPane'
 }).addTo(map);
@@ -43,17 +40,14 @@ let heatOn = true, origin = null, destination = null, currentElevation = null, s
 const $ = id => document.getElementById(id);
 const status = t => { if ($('status')) $('status').textContent = t; };
 
-// Menu geral de ferramentas: controles ocultos até tocar na engrenagem.
 $('settingsToggleBtn').addEventListener('click', () => {
   const menu = $('settingsMenu'); menu.hidden = !menu.hidden;
   $('settingsToggleBtn').setAttribute('aria-expanded', String(!menu.hidden));
 });
 
-// A busca começa recolhida para deixar o mapa térmico ocupar a tela.
 $('searchToggleBtn').onclick = () => { $('searchPanel').hidden = false; $('searchToggleBtn').hidden = true; };
 $('closeSearchBtn').onclick = () => { $('searchPanel').hidden = true; $('searchToggleBtn').hidden = false; };
 
-// Ação do novo botão de GPS externo
 if($('quickLocateBtn')) $('quickLocateBtn').onclick = () => locate(true);
 
 const setMarker = (old, p, label, color) => {
@@ -107,7 +101,6 @@ map.on('click', e => {
 
 $('pickDest').onclick = () => { choosingDest = true; status('Toque no mapa para escolher o destino.'); };
 if($('originHere')) $('originHere').onclick = () => locate(true);
-if($('locateBtn')) $('locateBtn').onclick = () => locate(true);
 
 function locate(setAsOrigin = false) {
   if (!navigator.geolocation) { status('GPS não disponível neste navegador.'); return; }
@@ -264,8 +257,6 @@ function updateElevationDifference() {
   $('elevDiff').style.color = d > 0 ? '#b65b24' : d < 0 ? '#176b47' : '#52645a';
 }
 
-
-// ===== URBAN PEDAL: gravação, marcadores, camadas e orientação =====
 const rideStoreKey = 'urban-pedal-rides-v1';
 const markerStoreKey = 'urban-pedal-markers-v1';
 let rideActive = false, ridePaused = false, rideStartedAt = 0, rideElapsedBefore = 0, rideTimer = null;
@@ -410,7 +401,6 @@ function deliverDelivery() {
     targetSession = {id:Date.now(),date:new Date().toISOString(),duration:elapsedRide(),distance:rideDistanceMeters,coords:rideCoords,deliveries:[...rideDeliveries],activeSession:true};
     rides.unshift(targetSession);
   } else {
-    // Preserva os valores anteriores que já estavam salvos nas entregas existentes dessa sessão
     targetSession.deliveries = rideDeliveries.map((d, idx) => {
       const existing = targetSession.deliveries && targetSession.deliveries[idx];
       return { ...d, value: existing && existing.value !== undefined ? existing.value : d.value };
@@ -474,7 +464,6 @@ document.getElementById('deliverDeliveryBtn').addEventListener('click',deliverDe
   if(rideActive) updateDeliveryStepState();
 })();
 
-// Marcadores pessoais persistidos no aparelho.
 const markerTypes={
  hole:{label:'Buraco',emoji:'🕳️',color:'#e53935'},
  danger:{label:'Rua perigosa',emoji:'⚠️',color:'#f57c00'},
@@ -533,7 +522,6 @@ document.getElementById('orientationBtn').addEventListener('click',async()=>{
 window.addEventListener('orientationchange',()=>setTimeout(()=>map.invalidateSize(),250));
 window.addEventListener('resize',()=>setTimeout(()=>map.invalidateSize(),150));
 
-// Histórico com cálculo de km da entrega individual
 function eventIcon(emoji){return L.divIcon({className:'ride-event-marker',html:emoji,iconSize:[30,30],iconAnchor:[15,15]});}
 function renderRideHistory(){
   const box=document.getElementById('historyList'),rides=readStore(rideStoreKey,[]);
@@ -551,7 +539,6 @@ function renderRideHistory(){
       const accepted=d.accepted?new Date(d.accepted.time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
       const delivered=d.delivered?new Date(d.delivered.time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'em andamento';
       
-      // Cálculo da distância da entrega em km (do aceite até a entrega, ou da retirada até a entrega)
       let deliveryKm = 0;
       const startPoint = d.retired || d.accepted;
       if (startPoint && d.delivered) {
