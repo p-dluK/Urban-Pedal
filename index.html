@@ -73,9 +73,15 @@
   </div>
 
   <div id="pedalHud" class="pedal-hud" aria-live="polite">
-    <span><b id="rideDistance">0,00</b><small> km</small></span>
-    <span><b id="rideTime">00:00:00</b></span>
-    <button id="rideButton" class="ride-button">▶ INICIAR</button>
+    <button id="rideButton" class="ride-button start-ride">▶ INICIAR</button>
+    <button id="endRideBtn" class="ride-action end-action" aria-label="Encerrar Modo Pedal" title="Encerrar" hidden>■</button>
+    <div id="rideStats" class="ride-stats"><span><b id="rideDistance">0,00</b><small> km</small></span><span><b id="rideTime">00:00:00</b></span></div>
+    <div id="rideActions" class="ride-actions" hidden>
+      <button id="acceptDeliveryBtn" class="ride-action accept-action">ACEITEI</button>
+      <button id="retireDeliveryBtn" class="ride-action retire-action">RETIREI</button>
+      <button id="deliverDeliveryBtn" class="ride-action deliver-action">ENTREGUEI</button>
+      <button id="pauseRideBtn" class="ride-action pause-action" aria-label="Pausar gravação" title="Pausar">Ⅱ</button>
+    </div>
   </div>
 
   <div id="markerMenu" class="mini-menu marker-menu" hidden>

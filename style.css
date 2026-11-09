@@ -152,3 +152,40 @@ main {
     margin-top: env(safe-area-inset-top, 0px);
   }
 }
+
+
+/* Modo Pedal: painel de registro de entregas compacto e adaptável à orientação. */
+.pedal-hud{left:50%;transform:translateX(-50%);gap:7px;padding:5px 7px;max-width:calc(100vw - 16px);}
+.ride-stats{display:flex;align-items:center;gap:10px;}
+.ride-stats span{display:flex;align-items:baseline;gap:2px;font-variant-numeric:tabular-nums;}
+.ride-actions{display:flex;align-items:center;gap:4px;}
+.ride-actions[hidden],.ride-button[hidden]{display:none!important;}
+.ride-action{border:0;border-radius:7px;padding:6px 8px;min-height:29px;font-size:9px;font-weight:900;white-space:nowrap;color:#fff;cursor:pointer;}
+.accept-action{background:#1677d2;}
+.retire-action{background:#e5b600;color:#171717;}
+.deliver-action{background:#16834a;}
+.pause-action,.end-action{background:#d92d20;font-size:15px;min-width:30px;padding:4px 7px;}
+.start-ride{background:#16834a;}
+.ride-event-marker{font-size:24px;line-height:30px;text-align:center;text-shadow:0 1px 4px #fff,0 1px 5px #0008;}
+.history-deliveries{margin:7px 0;display:flex;flex-direction:column;gap:5px;}
+.history-delivery{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 7px;background:#f1f5f2;border-radius:7px;font-size:10px;}
+.history-delivery .delivery-value{margin:0;padding:5px 9px;min-width:34px;background:#e5f2e8;color:#176b47;}
+/* Leaflet zoom +/- ficam ocultos; gestos de pinça e duplo toque continuam ativos. */
+.leaflet-control-zoom{display:none!important;}
+@media (orientation:landscape){
+  .pedal-hud{left:50%;top:max(7px,env(safe-area-inset-top));transform:translateX(-50%);flex-direction:row;}
+  body.pedal-mode .pedal-hud{flex-direction:row;}
+}
+@media (orientation:portrait){
+  .pedal-hud{left:50%;top:max(7px,env(safe-area-inset-top));transform:translateX(-50%);flex-direction:column;gap:4px;}
+  .ride-stats{justify-content:center;}
+  .ride-actions{justify-content:center;}
+  body.pedal-mode .pedal-hud{flex-direction:column;}
+}
+@media (max-width:600px){
+  .pedal-hud{gap:4px;padding:4px 5px;}
+  .ride-action{padding:5px 6px;font-size:8px;min-height:26px;}
+  .pause-action,.end-action{min-width:27px;min-height:26px;font-size:14px;}
+  .ride-stats{gap:8px;}
+  .ride-stats b{font-size:11px;}
+}

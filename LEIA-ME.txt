@@ -28,3 +28,7 @@ ATUALIZAÇÃO v7 — TELA CHEIA IMERSIVA
 - Mantido viewport-fit=cover e mapa estendido até as bordas, incluindo a área do recorte frontal quando o Android/Chrome permitir.
 - Cache atualizado para urban-pedal-v7.
 OBSERVAÇÃO: o Android pode revelar temporariamente as barras do sistema por gestos; isso é controlado pelo próprio sistema. A instalação precisa ser atualizada/reaberta para aplicar o novo modo de exibição.
+
+
+VERSAO 8 - REGISTRO DE ENTREGAS
+Painel com ACEITEI, RETIREI, ENTREGUEI, pausa e encerramento; pontos de retirada (caixa) e entrega (bandeira) no histórico; valores individuais por entrega; botões de zoom +/- ocultos mantendo zoom por gestos.
