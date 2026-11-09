@@ -53,6 +53,9 @@ $('settingsToggleBtn').addEventListener('click', () => {
 $('searchToggleBtn').onclick = () => { $('searchPanel').hidden = false; $('searchToggleBtn').hidden = true; };
 $('closeSearchBtn').onclick = () => { $('searchPanel').hidden = true; $('searchToggleBtn').hidden = false; };
 
+// Ação do novo botão de GPS externo
+if($('quickLocateBtn')) $('quickLocateBtn').onclick = () => locate(true);
+
 const setMarker = (old, p, label, color) => {
   if (old) map.removeLayer(old);
   return L.circleMarker(p, { radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 }).addTo(map).bindPopup(label);
@@ -68,7 +71,7 @@ function renderVia() {
 window.removeVia = i => { via.splice(i, 1); renderVia(); if (origin && destination) calculateRoute(); };
 
 map.on('click', e => {
-  if (markerMode) return;
+  if (window.markerMode) return;
   if (!zoneBounds.contains(e.latlng)) {
     status('Selecione um ponto dentro dos distritos cobertos (ZL).');
     return;
@@ -104,7 +107,7 @@ map.on('click', e => {
 
 $('pickDest').onclick = () => { choosingDest = true; status('Toque no mapa para escolher o destino.'); };
 if($('originHere')) $('originHere').onclick = () => locate(true);
-$('locateBtn').onclick = () => locate(true);
+if($('locateBtn')) $('locateBtn').onclick = () => locate(true);
 
 function locate(setAsOrigin = false) {
   if (!navigator.geolocation) { status('GPS não disponível neste navegador.'); return; }
@@ -267,7 +270,8 @@ const rideStoreKey = 'urban-pedal-rides-v1';
 const markerStoreKey = 'urban-pedal-markers-v1';
 let rideActive = false, ridePaused = false, rideStartedAt = 0, rideElapsedBefore = 0, rideTimer = null;
 let rideCoords = [], rideDistanceMeters = 0, lastRidePoint = null, rideLine = null, rideDeliveries = [], activeDelivery = null;
-let markerMode = null, savedMarkers = [];
+window.markerMode = null; 
+let savedMarkers = [];
 let rotateBearing = 0;
 
 function readStore(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (_) { return fallback; } }
@@ -284,7 +288,6 @@ function saveActiveRide() {
   writeStore('urban-pedal-active-v1',{startedAt:Date.now()-elapsedRide(),coords:rideCoords,distance:rideDistanceMeters,deliveries:rideDeliveries,activeDelivery,paused:ridePaused,elapsed:elapsedRide()});
 }
 
-// Controle de estado sequencial dos botões de entrega
 function updateDeliveryStepState() {
   const btnAccept = document.getElementById('acceptDeliveryBtn');
   const btnRetire = document.getElementById('retireDeliveryBtn');
@@ -292,31 +295,26 @@ function updateDeliveryStepState() {
   if(!btnAccept || !btnRetire || !btnDeliver) return;
 
   if(!rideActive || ridePaused) {
-    // Se o pedal não estiver ativo ou estiver pausado, desativa tudo
     btnAccept.disabled = true; btnAccept.style.opacity = '0.5';
     btnRetire.disabled = true; btnRetire.style.opacity = '0.5';
     btnDeliver.disabled = true; btnDeliver.style.opacity = '0.5';
     return;
   }
 
-  // Se não há entrega ativa iniciada (ou acabou de concluir uma)
   if(!activeDelivery) {
     btnAccept.disabled = false; btnAccept.style.opacity = '1';
     btnRetire.disabled = true; btnRetire.style.opacity = '0.5';
     btnDeliver.disabled = true; btnDeliver.style.opacity = '0.5';
   } else {
-    // Temos uma entrega em andamento:
     if(!activeDelivery.accepted) {
       btnAccept.disabled = false; btnAccept.style.opacity = '1';
       btnRetire.disabled = true; btnRetire.style.opacity = '0.5';
       btnDeliver.disabled = true; btnDeliver.style.opacity = '0.5';
     } else if(!activeDelivery.retired) {
-      // Já aceitou, mas ainda não retirou
       btnAccept.disabled = true; btnAccept.style.opacity = '0.5';
       btnRetire.disabled = false; btnRetire.style.opacity = '1';
       btnDeliver.disabled = true; btnDeliver.style.opacity = '0.5';
     } else if(!activeDelivery.delivered) {
-      // Já retirou, mas ainda não entregou
       btnAccept.disabled = true; btnAccept.style.opacity = '0.5';
       btnRetire.disabled = true; btnRetire.style.opacity = '0.5';
       btnDeliver.disabled = false; btnDeliver.style.opacity = '1';
@@ -405,22 +403,24 @@ function deliverDelivery() {
   const point=eventPoint();if(!point)return;
   activeDelivery.delivered=point;
   
-  // Salva imediatamente no histórico ativo (salva o registro atualizado no localStorage de histórico)
-  const tempRecord={id:Date.now(),date:new Date().toISOString(),duration:elapsedRide(),distance:rideDistanceMeters,coords:rideCoords,deliveries:[...rideDeliveries]};
   const rides=readStore(rideStoreKey,[]);
+  let targetSession = rides.find(x => x.activeSession);
   
-  // Se já houver um registro de pedalada atual no topo ou criamos um novo bloco para esta sessão:
-  if(rides.length && rides[0].activeSession) {
-    rides[0].deliveries = [...rideDeliveries];
-    rides[0].distance = rideDistanceMeters;
-    rides[0].duration = elapsedRide();
+  if(!targetSession) {
+    targetSession = {id:Date.now(),date:new Date().toISOString(),duration:elapsedRide(),distance:rideDistanceMeters,coords:rideCoords,deliveries:[...rideDeliveries],activeSession:true};
+    rides.unshift(targetSession);
   } else {
-    tempRecord.activeSession = true;
-    rides.unshift(tempRecord);
+    // Preserva os valores anteriores que já estavam salvos nas entregas existentes dessa sessão
+    targetSession.deliveries = rideDeliveries.map((d, idx) => {
+      const existing = targetSession.deliveries && targetSession.deliveries[idx];
+      return { ...d, value: existing && existing.value !== undefined ? existing.value : d.value };
+    });
+    targetSession.distance = rideDistanceMeters;
+    targetSession.duration = elapsedRide();
   }
+  
   writeStore(rideStoreKey,rides.slice(0,100));
   
-  // Reseta para a próxima entrega mantendo o Modo Pedal ativo
   activeDelivery = null;
   saveActiveRide();
   updateDeliveryStepState();
@@ -439,10 +439,12 @@ function stopRide() {
   if(!rideActive)return;
   rideElapsedBefore=elapsedRide();rideActive=false;ridePaused=false;clearInterval(rideTimer);rideTimer=null;
   const rides=readStore(rideStoreKey,[]);
-  // Remove a flag de sessão ativa e consolida
   const index = rides.findIndex(x => x.activeSession);
   if(index !== -1) {
     delete rides[index].activeSession;
+    rides[index].distance = rideDistanceMeters;
+    rides[index].duration = rideElapsedBefore;
+    rides[index].deliveries = rideDeliveries;
   } else {
     const record={id:Date.now(),date:new Date().toISOString(),duration:rideElapsedBefore,distance:rideDistanceMeters,coords:rideCoords,deliveries:rideDeliveries};
     rides.unshift(record);
@@ -500,12 +502,12 @@ function renderSavedMarkers(){
   });
 }
 document.getElementById('markerModeBtn').addEventListener('click',()=>{document.getElementById('markerMenu').hidden=!document.getElementById('markerMenu').hidden;});
-document.querySelectorAll('[data-marker]').forEach(b=>b.addEventListener('click',()=>{markerMode=b.dataset.marker;document.getElementById('markerMenu').hidden=true;status('Toque no mapa para posicionar: '+markerTypes[markerMode].label+'.');}));
-document.getElementById('cancelMarker').addEventListener('click',()=>{markerMode=null;document.getElementById('markerMenu').hidden=true;});
+document.querySelectorAll('[data-marker]').forEach(b=>b.addEventListener('click',()=>{window.markerMode=b.dataset.marker;document.getElementById('markerMenu').hidden=true;status('Toque no mapa para posicionar: '+markerTypes[window.markerMode].label+'.');}));
+document.getElementById('cancelMarker').addEventListener('click',()=>{window.markerMode=null;document.getElementById('markerMenu').hidden=true;});
 
 map.on('click',e=>{
-  if(!markerMode)return;
-  const type=markerMode;markerMode=null;
+  if(!window.markerMode)return;
+  const type=window.markerMode;window.markerMode=null;
   const note=prompt('Observação opcional para '+markerTypes[type].label+':','');
   const arr=readStore(markerStoreKey,[]);
   arr.push({id:Date.now(),type,lat:e.latlng.lat,lng:e.latlng.lng,note:note||''});
@@ -513,26 +515,25 @@ map.on('click',e=>{
 });
 renderSavedMarkers();
 
-// Menu de camadas: base OSM, ruas detalhadas sob o relevo e camada térmica.
 document.getElementById('layersBtn').addEventListener('click',()=>{const m=document.getElementById('layersMenu');m.hidden=!m.hidden;});
 document.getElementById('streetDetailToggle').addEventListener('change',e=>e.target.checked?streetDetail.addTo(map):map.removeLayer(streetDetail));
 document.getElementById('heatToggle').addEventListener('change',e=>{heatOn=e.target.checked;document.getElementById('heatBtn').classList.toggle('active',heatOn);heatOn?elevationLayer.addTo(map):map.removeLayer(elevationLayer);});
 document.getElementById('baseToggle').addEventListener('change',e=>{if(map.hasLayer(topoMap))map.removeLayer(topoMap);if(map.hasLayer(street))map.removeLayer(street);(e.target.checked?street:topoMap).addTo(map);});
 document.getElementById('rotateBtn').addEventListener('click',()=>{
   if(typeof map.setBearing==='function'){rotateBearing=(rotateBearing+45)%360;map.setBearing(rotateBearing);status('Orientação do mapa: '+rotateBearing+'°.');}
-  else status('Giro do mapa indisponível. Atualize a página e tente novamente.');
+  else status('Giro do mapa indisponível.');
 });
 document.getElementById('orientationBtn').addEventListener('click',async()=>{
   const landscape=screen.orientation?.type?.startsWith('landscape')||false;
   try{
     if(screen.orientation?.lock){await screen.orientation.lock(landscape?'portrait':'landscape');document.getElementById('orientationBtn').textContent=landscape?'▯ Retrato':'▱ Paisagem';}
-    else {status('Este Chrome não permite bloquear a orientação neste contexto. Gire o celular manualmente.');}
-  }catch(_){status('Para bloquear a orientação, abra o Urban Pedal instalado pelo Chrome e permita a rotação.');}
+    else {status('Gire o celular manualmente.');}
+  }catch(_){status('Permita a rotação no PWA.');}
 });
 window.addEventListener('orientationchange',()=>setTimeout(()=>map.invalidateSize(),250));
 window.addEventListener('resize',()=>setTimeout(()=>map.invalidateSize(),150));
 
-// Histórico de pedaladas e entregas com valores individuais e marcadores no trajeto.
+// Histórico com cálculo de km da entrega individual
 function eventIcon(emoji){return L.divIcon({className:'ride-event-marker',html:emoji,iconSize:[30,30],iconAnchor:[15,15]});}
 function renderRideHistory(){
   const box=document.getElementById('historyList'),rides=readStore(rideStoreKey,[]);
@@ -542,17 +543,43 @@ function renderRideHistory(){
     const row=document.createElement('div');row.className='history-item';
     const date=new Date(r.date).toLocaleString('pt-BR');
     const deliveries=r.deliveries||[];
-    row.innerHTML=`<b>${(r.distance/1000).toFixed(2)} km</b> · ${fmtTime(r.duration)}<br><small>${date}</small><div class="history-deliveries"></div>`;
+    row.innerHTML=`<b>${(r.distance/1000).toFixed(2)} km total</b> · ${fmtTime(r.duration)}<br><small>${date}</small><div class="history-deliveries"></div>`;
     const list=row.querySelector('.history-deliveries');
+    
     deliveries.forEach((d,i)=>{
       const item=document.createElement('div');item.className='history-delivery';
       const accepted=d.accepted?new Date(d.accepted.time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
       const delivered=d.delivered?new Date(d.delivered.time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'em andamento';
-      const label=document.createElement('span');label.textContent=`Entrega ${i+1} · ${accepted} → ${delivered}`;
+      
+      // Cálculo da distância da entrega em km (do aceite até a entrega, ou da retirada até a entrega)
+      let deliveryKm = 0;
+      const startPoint = d.retired || d.accepted;
+      if (startPoint && d.delivered) {
+        deliveryKm = map.distance([startPoint.lat, startPoint.lng], [d.delivered.lat, d.delivered.lng]) / 1000;
+      }
+      const kmText = deliveryKm > 0 ? `${deliveryKm.toFixed(2).replace('.',',')} km` : '';
+
+      const label=document.createElement('span');
+      label.innerHTML=`Entrega ${i+1} · ${accepted} → ${delivered} ${kmText ? `<b>(${kmText})</b>` : ''}`;
+      
       const money=document.createElement('button');money.className='delivery-value';money.textContent=d.value==null?'$':`$ ${Number(d.value).toFixed(2).replace('.',',')}`;money.title='Adicionar ou editar valor da corrida';
-      money.onclick=()=>{const raw=prompt('Valor recebido nesta entrega (R$):',d.value==null?'':String(d.value).replace('.',','));if(raw===null)return;const value=Number(raw.trim().replace(',','.'));if(!Number.isFinite(value)||value<0){alert('Informe um valor válido.');return;}const all=readStore(rideStoreKey,[]);const target=all.find(x=>x.id===r.id);if(!target)return;target.deliveries=target.deliveries||[];target.deliveries[i].value=value;writeStore(rideStoreKey,all);renderRideHistory();};
+      money.onclick=()=>{
+        const raw=prompt('Valor recebido nesta entrega (R$):',d.value==null?'':String(d.value).replace('.',','));
+        if(raw===null)return;
+        const value=Number(raw.trim().replace(',','.'));
+        if(!Number.isFinite(value)||value<0){alert('Informe um valor válido.');return;}
+        
+        const all=readStore(rideStoreKey,[]);
+        const target=all.find(x=>x.id===r.id);
+        if(!target)return;
+        target.deliveries=target.deliveries||[];
+        target.deliveries[i].value=value;
+        writeStore(rideStoreKey,all);
+        renderRideHistory();
+      };
       item.append(label,money);list.appendChild(item);
     });
+    
     const view=document.createElement('button');view.textContent='Ver trajeto';view.onclick=()=>{
       if(window.historyRoute)map.removeLayer(window.historyRoute);
       if(window.historyEventMarkers)window.historyEventMarkers.forEach(m=>map.removeLayer(m));
