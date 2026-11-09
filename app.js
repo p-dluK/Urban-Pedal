@@ -434,7 +434,11 @@ function stopRide() {
     delete rides[index].activeSession;
     rides[index].distance = rideDistanceMeters;
     rides[index].duration = rideElapsedBefore;
-    rides[index].deliveries = rideDeliveries;
+    // Garante preservação dos valores preenchidos ao encerrar
+    rides[index].deliveries = rideDeliveries.map((d, idx) => {
+      const existing = rides[index].deliveries && rides[index].deliveries[idx];
+      return { ...d, value: existing && existing.value !== undefined ? existing.value : d.value };
+    });
   } else {
     const record={id:Date.now(),date:new Date().toISOString(),duration:rideElapsedBefore,distance:rideDistanceMeters,coords:rideCoords,deliveries:rideDeliveries};
     rides.unshift(record);
@@ -531,7 +535,12 @@ function renderRideHistory(){
     const row=document.createElement('div');row.className='history-item';
     const date=new Date(r.date).toLocaleString('pt-BR');
     const deliveries=r.deliveries||[];
-    row.innerHTML=`<b>${(r.distance/1000).toFixed(2)} km total</b> · ${fmtTime(r.duration)}<br><small>${date}</small><div class="history-deliveries"></div>`;
+    
+    // Soma o valor total de todas as entregas com valor preenchido nesta pedalada
+    const totalEarnings = deliveries.reduce((acc, d) => acc + (Number.isFinite(Number(d.value)) ? Number(d.value) : 0), 0);
+    const earningsText = totalEarnings > 0 ? ` · <b>R$ ${totalEarnings.toFixed(2).replace('.',',')}</b>` : '';
+
+    row.innerHTML=`<b>${(r.distance/1000).toFixed(2)} km total</b> · ${fmtTime(r.duration)}${earningsText}<br><small>${date}</small><div class="history-deliveries"></div>`;
     const list=row.querySelector('.history-deliveries');
     
     deliveries.forEach((d,i)=>{
