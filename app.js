@@ -434,7 +434,6 @@ function stopRide() {
     delete rides[index].activeSession;
     rides[index].distance = rideDistanceMeters;
     rides[index].duration = rideElapsedBefore;
-    // Garante preservação dos valores preenchidos ao encerrar
     rides[index].deliveries = rideDeliveries.map((d, idx) => {
       const existing = rides[index].deliveries && rides[index].deliveries[idx];
       return { ...d, value: existing && existing.value !== undefined ? existing.value : d.value };
@@ -527,6 +526,22 @@ window.addEventListener('orientationchange',()=>setTimeout(()=>map.invalidateSiz
 window.addEventListener('resize',()=>setTimeout(()=>map.invalidateSize(),150));
 
 function eventIcon(emoji){return L.divIcon({className:'ride-event-marker',html:emoji,iconSize:[30,30],iconAnchor:[15,15]});}
+
+// Função para excluir uma pedalada do histórico
+window.deleteRideRecord = function(rideId) {
+  if (!confirm("Deseja realmente excluir esta pedalada do histórico?")) return;
+  
+  let rides = readStore(rideStoreKey, []);
+  rides = rides.filter(r => r.id !== rideId);
+  writeStore(rideStoreKey, rides);
+  
+  if (window.historyRoute) map.removeLayer(window.historyRoute);
+  if (window.historyEventMarkers) window.historyEventMarkers.forEach(m => map.removeLayer(m));
+  
+  renderRideHistory();
+  status("Pedalada excluída do histórico.");
+};
+
 function renderRideHistory(){
   const box=document.getElementById('historyList'),rides=readStore(rideStoreKey,[]);
   if(!box)return;
@@ -536,11 +551,20 @@ function renderRideHistory(){
     const date=new Date(r.date).toLocaleString('pt-BR');
     const deliveries=r.deliveries||[];
     
-    // Soma o valor total de todas as entregas com valor preenchido nesta pedalada
+    // Soma os ganhos totais da pedalada
     const totalEarnings = deliveries.reduce((acc, d) => acc + (Number.isFinite(Number(d.value)) ? Number(d.value) : 0), 0);
-    const earningsText = totalEarnings > 0 ? ` · <b>R$ ${totalEarnings.toFixed(2).replace('.',',')}</b>` : '';
+    const earningsText = totalEarnings > 0 ? ` · <b style="color:#176b47;">R$ ${totalEarnings.toFixed(2).replace('.',',')}</b>` : '';
 
-    row.innerHTML=`<b>${(r.distance/1000).toFixed(2)} km total</b> · ${fmtTime(r.duration)}${earningsText}<br><small>${date}</small><div class="history-deliveries"></div>`;
+    row.innerHTML=`
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <b>${(r.distance/1000).toFixed(2)} km total</b> · ${fmtTime(r.duration)}${earningsText}<br>
+          <small>${date}</small>
+        </div>
+        <button onclick="deleteRideRecord(${r.id})" style="border:0; background:transparent; color:#d92d20; font-size:16px; cursor:pointer; padding:2px 6px;" title="Excluir pedalada">🗑️</button>
+      </div>
+      <div class="history-deliveries"></div>
+    `;
     const list=row.querySelector('.history-deliveries');
     
     deliveries.forEach((d,i)=>{
@@ -570,6 +594,13 @@ function renderRideHistory(){
         if(!target)return;
         target.deliveries=target.deliveries||[];
         target.deliveries[i].value=value;
+        
+        // Atualiza o objeto da entrega ativa se o modo pedal ainda estiver rodando
+        if (rideActive && rideDeliveries[i]) {
+          rideDeliveries[i].value = value;
+          saveActiveRide();
+        }
+        
         writeStore(rideStoreKey,all);
         renderRideHistory();
       };
