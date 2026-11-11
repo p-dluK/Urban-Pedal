@@ -8,13 +8,11 @@ main{position:relative;width:100vw;height:100dvh;min-height:100%;overflow:hidden
 .street-detail{mix-blend-mode:multiply;filter:contrast(1.22) saturate(.72)}
 .leaflet-tile-pane{isolation:isolate}
 
-.search-toggle{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;padding:0;background:rgba(255,255,255,.96);color:#153b2b;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
+.search-toggle{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;background:rgba(255,255,255,.96);color:#153b2b;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
 .search-toggle svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 .search-toggle[hidden]{display:none}
 
-/* Botão de GPS rápido ao lado da lupa */
 .quick-locate-btn{position:absolute;top:max(14px,env(safe-area-inset-top));left:66px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;background:rgba(255,255,255,.96);color:#153b2b;font-weight:850;font-size:18px;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
-body.pedal-mode .quick-locate-btn{top:max(7px,env(safe-area-inset-top));left:54px;width:38px;height:38px;font-size:15px}
 
 .floating-panel{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;z-index:1200;width:360px;max-width:calc(100vw - 28px);max-height:calc(100dvh - 28px - env(safe-area-inset-bottom));background:rgba(255,255,255,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-radius:17px;padding:15px;box-shadow:0 8px 32px rgba(0,0,0,.22);overflow-y:auto}
 .floating-panel[hidden]{display:none}
@@ -65,36 +63,37 @@ input{min-width:0;flex:1;border:1px solid #d6e0da;border-radius:9px;padding:11px
 .history-item button{margin-top:6px;border:0;border-radius:7px;padding:6px 9px;background:#e8f2eb;color:#185b3a;font-weight:800}
 
 .saved-marker{font-size:20px;line-height:24px;text-align:center;text-shadow:0 1px 3px #fff}
-.saved-marker-popup .delete-saved-marker{margin-top:8px;border:0;border-radius:8px;padding:8px 12px;background:#b83232;color:#fff;font-weight:800;cursor:pointer}
 
-body.pedal-mode .search-toggle{top:max(7px,env(safe-area-inset-top));left:8px;width:38px;height:38px;min-height:38px}
-body.pedal-mode .settings-wrap{top:max(7px,env(safe-area-inset-top));right:8px}
+/* Topo HUD quando inativo */
+.top-start-hud{position:absolute;z-index:1050;top:max(14px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:5px 9px;border-radius:13px;background:rgba(12,30,25,.88);color:#fff;box-shadow:0 4px 16px #0003}
+.ride-button{border:0;border-radius:9px;padding:8px 12px;background:#16834d;color:white;font-weight:900;font-size:11px;cursor:pointer}
+.top-start-stats{font-size:12px;display:flex;gap:6px;align-items:baseline}
 
-.pedal-hud{position:absolute;z-index:1050;top:max(7px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:11px;background:rgba(12,30,25,.82);color:#fff;box-shadow:0 3px 12px #0003;font-size:12px;white-space:nowrap;max-width:calc(100vw - 16px)}
-.ride-stats{display:flex;align-items:center;gap:10px}
-.ride-stats span{display:flex;align-items:baseline;gap:2px;font-variant-numeric:tabular-nums}
-.ride-stats b{font-size:13px}
-.ride-stats small{font-size:9px;opacity:.8}
-.ride-actions{display:flex;align-items:center;gap:4px}
-.ride-actions[hidden],.ride-button[hidden]{display:none!important}
-.ride-action{border:0;border-radius:7px;padding:6px 8px;min-height:29px;font-size:9px;font-weight:900;white-space:nowrap;color:#fff;cursor:pointer}
-.accept-action{background:#1677d2}
-.retire-action{background:#e5b600;color:#171717}
-.deliver-action{background:#16834a}
-.pause-action,.end-action{background:#d92d20;font-size:15px;min-width:30px;padding:4px 7px}
-.ride-button{border:0;border-radius:8px;padding:7px 10px;background:#16834d;color:white;font-weight:900;font-size:10px;min-height:30px}
-.ride-event-marker{font-size:24px;line-height:30px;text-align:center;text-shadow:0 1px 4px #fff,0 1px 5px #0008}
+/* MODO PEDAL INFERIOR (BOTTOM HUD) */
+.pedal-hud-bottom{position:absolute;z-index:1600;bottom:max(16px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100vw - 20px);max-width:440px;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
+.pedal-hud-bottom > *{pointer-events:auto}
+.pedal-hud-bottom[hidden]{display:none!important}
 
-.history-deliveries{margin:7px 0;display:flex;flex-direction:column;gap:5px}
-.history-delivery{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 7px;background:#f1f5f2;border-radius:7px;font-size:10px}
-.history-delivery .delivery-value{margin:0;padding:5px 9px;min-width:34px;background:#e5f2e8;color:#176b47}
+/* Card estatísticas: TOTAL | ENTREGA */
+.ride-stats-card{display:flex;align-items:center;justify-content:center;gap:12px;background:rgba(15,22,20,.92);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:7px 18px;color:#fff;box-shadow:0 6px 20px #0004;font-size:12px;letter-spacing:.3px}
+.stat-box{text-align:center}
+.stat-box small{display:block;font-size:9px;font-weight:900;color:#9eb0a6;letter-spacing:1px}
+.stat-values{margin-top:2px;font-size:13px;font-variant-numeric:tabular-nums}
+.stat-values b{font-weight:850;color:#fff}
+.stat-values span{color:#d0ded6;font-size:12px}
+.stat-divider{color:#52695d;font-weight:300;font-size:14px}
+
+/* Botões gigantes de controle na parte inferior */
+.bottom-actions-row{display:flex;align-items:center;justify-content:center;gap:6px;width:100%}
+.bottom-btn{border:0;border-radius:14px;height:52px;font-weight:900;font-size:13px;letter-spacing:.5px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:transform .1s active}
+.bottom-btn:active{transform:scale(.96)}
+
+.accept-btn{background:#1685d6;color:#fff;flex:1}
+.retire-btn{background:#00b862;color:#fff;flex:1}
+.deliver-btn{background:#f0c030;color:#18201b;flex:1.1}
+.end-btn{background:#d92d20;color:#fff;width:52px;font-size:22px;line-height:1;border-radius:14px}
+.pause-btn{background:#d92d20;color:#fff;width:52px;font-size:20px;line-height:1;border-radius:14px}
+
+.bottom-btn:disabled{opacity:0.35!important;cursor:not-allowed;box-shadow:none}
 
 .leaflet-control-zoom{display:none!important}
-
-@media (max-width:600px){
-  .pedal-hud{gap:4px;padding:4px 5px}
-  .ride-action{padding:5px 6px;font-size:8px;min-height:26px}
-  .pause-action,.end-action{min-width:27px;min-height:26px;font-size:14px}
-  .ride-stats{gap:8px}
-  .ride-stats b{font-size:11px}
-}

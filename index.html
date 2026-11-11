@@ -16,15 +16,15 @@
   <!-- Mapa Fullscreen -->
   <div id="map" aria-label="Mapa interativo"></div>
 
-  <!-- Atalho para abrir a busca sem ocupar o mapa -->
+  <!-- Atalho de busca -->
   <button id="searchToggleBtn" class="search-toggle" aria-label="Abrir pesquisa de endereço" title="Pesquisar endereço">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
   </button>
 
-  <!-- Botão de GPS fixo do lado de fora, ao lado da lupa -->
+  <!-- Botão de GPS fixo rápido ao lado da lupa -->
   <button id="quickLocateBtn" class="quick-locate-btn" aria-label="Minha localização GPS" title="Minha localização GPS">📍</button>
 
-  <!-- Janela de pesquisa: recolhida por padrão -->
+  <!-- Janela de pesquisa -->
   <section class="floating-panel" id="searchPanel" hidden>
     <div class="panel-header">
       <strong>ALTITUDE <span>BIKE GPS</span></strong>
@@ -55,14 +55,12 @@
     <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
 
-  <!-- Ferramentas recolhidas no botão de engrenagem -->
+  <!-- Menu de configurações (sem botão de girar e sem botão de paisagem) -->
   <div class="settings-wrap">
     <button id="settingsToggleBtn" class="settings-toggle" aria-label="Abrir configurações" title="Configurações">⚙</button>
     <div id="settingsMenu" class="settings-menu" hidden>
       <button id="heatBtn" class="tool-btn active">🌡 Altitude</button>
       <button id="layersBtn" class="tool-btn">Camadas</button>
-      <button id="rotateBtn" class="tool-btn" title="Girar o mapa">⟳ Girar</button>
-      <button id="orientationBtn" class="tool-btn" title="Alternar paisagem/retrato">▱ Paisagem</button>
       <button id="markerModeBtn" class="tool-btn">📍 Marcador</button>
       <button id="historyBtn" class="tool-btn">Histórico</button>
     </div>
@@ -74,15 +72,34 @@
     <label><input type="checkbox" id="baseToggle" checked> Mapa de ruas</label>
   </div>
 
-  <div id="pedalHud" class="pedal-hud" aria-live="polite">
+  <!-- Botão Iniciar quando inativo (Topo da tela) -->
+  <div id="startHud" class="top-start-hud">
     <button id="rideButton" class="ride-button start-ride">▶ INICIAR</button>
-    <button id="endRideBtn" class="ride-action end-action" aria-label="Encerrar Modo Pedal" title="Encerrar" hidden>■</button>
-    <div id="rideStats" class="ride-stats"><span><b id="rideDistance">0,00</b><small> km</small></span><span><b id="rideTime">00:00:00</b></span></div>
-    <div id="rideActions" class="ride-actions" hidden>
-      <button id="acceptDeliveryBtn" class="ride-action accept-action">ACEITEI</button>
-      <button id="retireDeliveryBtn" class="ride-action retire-action">RETIREI</button>
-      <button id="deliverDeliveryBtn" class="ride-action deliver-action">ENTREGUEI</button>
-      <button id="pauseRideBtn" class="ride-action pause-action" aria-label="Pausar gravação" title="Pausar">Ⅱ</button>
+    <div class="top-start-stats"><b>0,00 km</b> <span>00:00:00</span></div>
+  </div>
+
+  <!-- Painel do Modo Pedal na parte inferior (Bottom Bar com botões grandes) -->
+  <div id="pedalHudBottom" class="pedal-hud-bottom" hidden>
+    <!-- Cartão com estatísticas Total vs Entrega Atual -->
+    <div id="rideStatsCard" class="ride-stats-card">
+      <div class="stat-box">
+        <small>TOTAL</small>
+        <div class="stat-values"><b id="rideDistanceTotal">0,0 km</b> - <span id="rideTimeTotal">0m</span></div>
+      </div>
+      <div class="stat-divider">|</div>
+      <div class="stat-box">
+        <small>ENTREGA</small>
+        <div class="stat-values"><b id="rideDistanceDelivery">0,0 km</b> - <span id="rideTimeDelivery">0m</span></div>
+      </div>
+    </div>
+
+    <!-- Botões gigantes de ação na parte inferior -->
+    <div class="bottom-actions-row">
+      <button id="endRideBtn" class="bottom-btn end-btn" title="Encerrar">■</button>
+      <button id="acceptDeliveryBtn" class="bottom-btn accept-btn">ACEITEI</button>
+      <button id="retireDeliveryBtn" class="bottom-btn retire-btn">RETIREI</button>
+      <button id="deliverDeliveryBtn" class="bottom-btn deliver-btn">ENTREGUEI</button>
+      <button id="pauseRideBtn" class="bottom-btn pause-btn" title="Pausar">Ⅱ</button>
     </div>
   </div>
 
