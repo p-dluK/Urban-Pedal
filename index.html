@@ -16,12 +16,12 @@
   <!-- Mapa Fullscreen -->
   <div id="map" aria-label="Mapa interativo"></div>
 
-  <!-- Atalho de busca -->
+  <!-- Atalho para abrir a busca sem ocupar o mapa -->
   <button id="searchToggleBtn" class="search-toggle" aria-label="Abrir pesquisa de endereço" title="Pesquisar endereço">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
   </button>
 
-  <!-- Botão de GPS rápido ao lado da lupa -->
+  <!-- Botão de GPS fixo do lado de fora, ao lado da lupa -->
   <button id="quickLocateBtn" class="quick-locate-btn" aria-label="Minha localização GPS" title="Minha localização GPS">📍</button>
 
   <!-- Botão de Estatísticas (Gráfico) -->
@@ -39,7 +39,7 @@
     </div>
   </div>
 
-  <!-- Janela de pesquisa -->
+  <!-- Janela de pesquisa: recolhida por padrão -->
   <section class="floating-panel" id="searchPanel" hidden>
     <div class="panel-header">
       <strong>ALTITUDE <span>BIKE GPS</span></strong>
@@ -70,7 +70,7 @@
     <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
 
-  <!-- Menu de configurações -->
+  <!-- Ferramentas recolhidas no botão de engrenagem (Sem girar nem paisagem) -->
   <div class="settings-wrap">
     <button id="settingsToggleBtn" class="settings-toggle" aria-label="Abrir configurações" title="Configurações">⚙</button>
     <div id="settingsMenu" class="settings-menu" hidden>
@@ -102,11 +102,14 @@
     </div>
   </section>
 
-  <!-- PAINEL INFERIOR (MODO PEDAL E INICIAR) -->
+  <!-- PAINEL UNIFICADO NA PARTE INFERIOR (MODO PEDAL E BOTÃO INICIAR) -->
   <div id="pedalHudBottom" class="pedal-hud-bottom">
+    <!-- Estado Inativo: Botão Iniciar com mesmas dimensões dos controles -->
     <div id="startStateWrap" class="bottom-start-wrap">
       <button id="rideButton" class="bottom-btn start-big-btn">▶ INICIAR PEDALADA</button>
     </div>
+
+    <!-- Estado Ativo: Cartão Estatístico + Botões Grandes de Ação -->
     <div id="activeStateWrap" class="bottom-active-wrap" hidden>
       <div class="ride-stats-card">
         <div class="stat-box">
@@ -119,6 +122,7 @@
           <div class="stat-values"><b id="rideDistanceDelivery">0,0 km</b> - <span id="rideTimeDelivery">0m</span></div>
         </div>
       </div>
+
       <div class="bottom-actions-row">
         <button id="endRideBtn" class="bottom-btn end-btn" title="Encerrar">■</button>
         <button id="acceptDeliveryBtn" class="bottom-btn accept-btn">ACEITEI</button>
