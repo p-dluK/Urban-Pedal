@@ -40,8 +40,76 @@ let heatOn = true, origin = null, destination = null, currentElevation = null, s
 const $ = id => document.getElementById(id);
 const status = t => { if ($('status')) $('status').textContent = t; };
 
-$('searchToggleBtn').onclick = () => { $('searchPanel').hidden = false; $('searchToggleBtn').hidden = true; };
-$('closeSearchBtn').onclick = () => { $('searchPanel').hidden = true; $('searchToggleBtn').hidden = false; };
+// --- CONTROLE DE JANELAS / MENUS EXCLUSIVOS ---
+const searchPanel = $('searchPanel');
+const statsPanel = $('statsPanel');
+const historyPanel = $('historyPanel');
+const markerMenu = $('markerMenu');
+const layersMenu = $('layersMenu');
+
+function closeAllPanels() {
+  searchPanel.hidden = true;
+  statsPanel.hidden = true;
+  historyPanel.hidden = true;
+  markerMenu.hidden = true;
+  layersMenu.hidden = true;
+}
+
+// 1. Pesquisa
+$('searchToggleBtn').onclick = () => {
+  const isOpen = !searchPanel.hidden;
+  closeAllPanels();
+  if (!isOpen) {
+    searchPanel.hidden = false;
+  }
+};
+$('closeSearchBtn').onclick = () => { searchPanel.hidden = true; };
+
+// 2. Estatísticas
+$('statsToggleBtn').onclick = () => {
+  const isOpen = !statsPanel.hidden;
+  closeAllPanels();
+  if (!isOpen) {
+    renderStatsPanel();
+    statsPanel.hidden = false;
+  }
+};
+$('closeStats').onclick = () => { statsPanel.hidden = true; };
+
+// 3. Histórico
+$('historyBtn').onclick = () => {
+  const isOpen = !historyPanel.hidden;
+  closeAllPanels();
+  if (!isOpen) {
+    renderRideHistory();
+    historyPanel.hidden = false;
+  }
+};
+$('closeHistory').onclick = () => { historyPanel.hidden = true; };
+
+// 4. Marcador
+$('markerModeBtn').onclick = () => {
+  const isOpen = !markerMenu.hidden;
+  closeAllPanels();
+  if (!isOpen) {
+    markerMenu.hidden = false;
+  }
+};
+
+// 5. Camadas e Altitude
+$('layersBtn').onclick = () => {
+  const isOpen = !layersMenu.hidden;
+  closeAllPanels();
+  if (!isOpen) {
+    layersMenu.hidden = false;
+  }
+};
+
+// 6. Botão de Limpar Rota (substituindo o PiP)
+$('clearRouteBtn').onclick = () => {
+  closeAllPanels();
+  clearCurrentRoute();
+};
 
 if($('quickLocateBtn')) $('quickLocateBtn').onclick = () => locate(true);
 
@@ -169,18 +237,20 @@ $('origin').addEventListener('change', async e => {
   } catch (_) { status('Não foi possível localizar a origem.'); }
 });
 
-$('routeBtn').onclick = calculateRoute;
-$('clearBtn').onclick = () => {
+function clearCurrentRoute() {
   origin = destination = null;
   via = [];
   clearViaMarkers();
   [routeLine, originMarker, destMarker].forEach(x => x && map.removeLayer(x));
   routeLine = originMarker = destMarker = null;
-  $('origin').value = '';
-  $('destination').value = '';
-  $('routeInfo').hidden = true;
+  if ($('origin')) $('origin').value = '';
+  if ($('destination')) $('destination').value = '';
+  if ($('routeInfo')) $('routeInfo').hidden = true;
   status('Rota limpa.');
-};
+}
+
+$('routeBtn').onclick = calculateRoute;
+$('clearBtn').onclick = clearCurrentRoute;
 
 async function calculateRoute() {
   if (!origin || !destination) { status('Defina origem e destino primeiro.'); return; }
@@ -350,7 +420,7 @@ function startRide() {
   if(watchId!==null)navigator.geolocation.clearWatch(watchId);
   watchId=navigator.geolocation.watchPosition(onRidePosition,err=>status('Falha no GPS: '+err.message),{enableHighAccuracy:true,maximumAge:1000,timeout:15000});
   rideActive=true;ridePaused=false;rideStartedAt=Date.now();document.body.classList.add('pedal-mode');
-  if(document.getElementById('searchPanel')){document.getElementById('searchPanel').hidden=true;document.getElementById('searchToggleBtn').hidden=false;}
+  closeAllPanels();
   setRideControls();
   rideTimer=setInterval(()=>{updateRideHud();saveActiveRide();},1000);
   status('Modo Pedal iniciado.');updateRideHud();saveActiveRide();
@@ -482,64 +552,6 @@ document.getElementById('acceptDeliveryBtn').addEventListener('click',acceptDeli
 document.getElementById('retireDeliveryBtn').addEventListener('click',retireDelivery);
 document.getElementById('deliverDeliveryBtn').addEventListener('click',deliverDelivery);
 
-// --- SUPORTE À JANELA FLUTUANTE (DOCUMENT PICTURE-IN-PICTURE API) ---
-let pipWindow = null;
-
-async function togglePipMode() {
-  if ('documentPictureInPicture' in window) {
-    if (pipWindow) {
-      pipWindow.close();
-      return;
-    }
-
-    try {
-      const hud = document.getElementById('pedalHudBottom');
-
-      // Solicita a abertura da janela flutuante
-      pipWindow = await window.documentPictureInPicture.requestWindow({
-        width: 380,
-        height: 180,
-      });
-
-      // Copia todas as folhas de estilo da página principal para manter o visual na janela flutuante
-      [...document.styleSheets].forEach((styleSheet) => {
-        try {
-          const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
-          const style = pipWindow.document.createElement('style');
-          style.textContent = cssRules;
-          pipWindow.document.head.appendChild(style);
-        } catch (e) {
-          const link = pipWindow.document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = styleSheet.href;
-          pipWindow.document.head.appendChild(link);
-        }
-      });
-
-      pipWindow.document.body.className = 'pip-body';
-      pipWindow.document.body.appendChild(hud);
-
-      // Quando a janela flutuante for fechada, devolve o painel para a página principal
-      pipWindow.addEventListener('unload', () => {
-        document.main ? document.main.appendChild(hud) : document.body.appendChild(hud);
-        pipWindow = null;
-        document.getElementById('pipBtn').style.background = 'rgba(255,255,255,.96)';
-        document.getElementById('pipBtn').style.color = '#153b2b';
-      });
-
-      document.getElementById('pipBtn').style.background = '#1685d6';
-      document.getElementById('pipBtn').style.color = '#fff';
-
-    } catch (err) {
-      alert('Não foi possível abrir a janela flutuante: ' + err.message);
-    }
-  } else {
-    alert('A Document Picture-in-Picture API não é suportada neste navegador (Requer Google Chrome / Edge no Desktop).');
-  }
-}
-
-document.getElementById('pipBtn').addEventListener('click', togglePipMode);
-
 (function restoreActiveRide(){
   const a=readStore('urban-pedal-active-v1',null);if(!a)return;
   rideCoords=a.coords||[];rideDistanceMeters=a.distance||0;rideElapsedBefore=a.elapsed||Math.max(0,Date.now()-(a.startedAt||Date.now()));
@@ -576,15 +588,12 @@ function renderSavedMarkers(){
   });
 }
 
-document.getElementById('markerModeBtn').addEventListener('click',()=>{
-  const m = document.getElementById('markerMenu');
-  m.hidden = !m.hidden;
-  document.getElementById('layersMenu').hidden = true;
-  document.getElementById('historyPanel').hidden = true;
-});
-
-document.querySelectorAll('[data-marker]').forEach(b=>b.addEventListener('click',()=>{window.markerMode=b.dataset.marker;document.getElementById('markerMenu').hidden=true;status('Toque no mapa para posicionar: '+markerTypes[window.markerMode].label+'.');}));
-document.getElementById('cancelMarker').addEventListener('click',()=>{window.markerMode=null;document.getElementById('markerMenu').hidden=true;});
+document.querySelectorAll('[data-marker]').forEach(b=>b.addEventListener('click',()=>{
+  window.markerMode=b.dataset.marker;
+  closeAllPanels();
+  status('Toque no mapa para posicionar: '+markerTypes[window.markerMode].label+'.');
+}));
+document.getElementById('cancelMarker').addEventListener('click',()=>{window.markerMode=null;closeAllPanels();});
 
 map.on('click',e=>{
   if(!window.markerMode)return;
@@ -595,14 +604,6 @@ map.on('click',e=>{
   writeStore(markerStoreKey,arr);renderSavedMarkers();status('Marcador salvo no mapa.');
 });
 renderSavedMarkers();
-
-// Abertura do menu de camadas e altitude pelo botão 🗺️
-document.getElementById('layersBtn').addEventListener('click',()=>{
-  const m=document.getElementById('layersMenu');
-  m.hidden=!m.hidden;
-  document.getElementById('markerMenu').hidden=true;
-  document.getElementById('historyPanel').hidden=true;
-});
 
 document.getElementById('heatBtn').onclick = () => {
   heatOn = !heatOn;
@@ -700,37 +701,17 @@ function renderRideHistory(){
         if(d.retired)window.historyEventMarkers.push(L.marker([d.retired.lat,d.retired.lng],{icon:eventIcon('📦')}).addTo(map).bindPopup('Pedido retirado'));
         if(d.delivered)window.historyEventMarkers.push(L.marker([d.delivered.lat,d.delivered.lng],{icon:eventIcon('🚩')}).addTo(map).bindPopup('Entrega concluída'));
       });
-      document.getElementById('historyPanel').hidden=true;status('Trajeto e pontos das entregas exibidos no mapa.');
+      closeAllPanels();
+      status('Trajeto e pontos das entregas exibidos no mapa.');
     };
     row.appendChild(view);box.appendChild(row);
   });
 }
 
-document.getElementById('historyBtn').addEventListener('click',()=>{
-  renderRideHistory();
-  const hp = document.getElementById('historyPanel');
-  hp.hidden = !hp.hidden;
-  document.getElementById('markerMenu').hidden = true;
-  document.getElementById('layersMenu').hidden = true;
-});
-
-document.getElementById('closeHistory').onclick = () => document.getElementById('historyPanel').hidden = true;
+document.getElementById('closeHistory').onclick = () => historyPanel.hidden = true;
 renderRideHistory();
 
-// --- PAINEL DE ESTATÍSTICAS E MÉTRICAS ---
 let currentStatsTab = 'day';
-
-document.getElementById('statsToggleBtn').onclick = () => {
-  renderStatsPanel();
-  document.getElementById('statsPanel').hidden = false;
-  document.getElementById('markerMenu').hidden = true;
-  document.getElementById('layersMenu').hidden = true;
-  document.getElementById('historyPanel').hidden = true;
-};
-
-document.getElementById('closeStats').onclick = () => {
-  document.getElementById('statsPanel').hidden = true;
-};
 
 document.getElementById('tabDay').onclick = () => {
   currentStatsTab = 'day';

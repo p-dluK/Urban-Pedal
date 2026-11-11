@@ -25,7 +25,7 @@ body.pedal-mode .top-btn-pos-5{left:174px}
 body.pedal-mode .top-btn-pos-6{left:216px}
 body.pedal-mode .top-btn-pos-7{left:258px}
 
-.search-toggle, .quick-locate-btn, .stats-toggle-btn, .history-toggle-btn, .marker-toggle-btn, .layers-toggle-btn, .pip-toggle-btn {
+.search-toggle, .quick-locate-btn, .stats-toggle-btn, .history-toggle-btn, .marker-toggle-btn, .layers-toggle-btn, .clear-route-top-btn {
   position:absolute;
   top:max(14px,env(safe-area-inset-top));
   z-index:1100;
@@ -52,7 +52,7 @@ body.pedal-mode .stats-toggle-btn,
 body.pedal-mode .history-toggle-btn, 
 body.pedal-mode .marker-toggle-btn, 
 body.pedal-mode .layers-toggle-btn,
-body.pedal-mode .pip-toggle-btn {
+body.pedal-mode .clear-route-top-btn {
   top:max(7px,env(safe-area-inset-top));
   width:36px;
   height:36px;
@@ -62,29 +62,6 @@ body.pedal-mode .pip-toggle-btn {
 
 .search-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 .search-toggle[hidden]{display:none}
-
-/* Estilos da janela PiP quando o HUD estiver nela */
-.pip-body {
-  margin:0;
-  padding:12px;
-  background:#101b17;
-  color:#fff;
-  font-family:system-ui,-apple-system,sans-serif;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  box-sizing:border-box;
-}
-
-.pip-body .pedal-hud-bottom {
-  position:relative;
-  bottom:auto;
-  left:auto;
-  transform:none;
-  width:100%;
-  max-width:100%;
-}
 
 /* Painel de Estatísticas e Abas */
 .stats-panel{width:min(380px,calc(100vw - 24px));max-height:75vh}
