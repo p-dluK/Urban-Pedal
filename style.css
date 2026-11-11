@@ -8,38 +8,40 @@ main{position:relative;width:100vw;height:100dvh;min-height:100%;overflow:hidden
 .street-detail{mix-blend-mode:multiply;filter:contrast(1.22) saturate(.72)}
 .leaflet-tile-pane{isolation:isolate}
 
-/* Posicionamento dinâmico dos 6 botões superiores em linha (lupa, bike, gráfico, histórico, marcador, mapa) */
+/* Posicionamento dos botões superiores em linha */
 .top-btn-pos-1{left:14px}
-.top-btn-pos-2{left:66px}
-.top-btn-pos-3{left:118px}
-.top-btn-pos-4{left:170px}
-.top-btn-pos-5{left:222px}
-.top-btn-pos-6{left:274px}
+.top-btn-pos-2{left:64px}
+.top-btn-pos-3{left:114px}
+.top-btn-pos-4{left:164px}
+.top-btn-pos-5{left:214px}
+.top-btn-pos-6{left:264px}
+.top-btn-pos-7{left:314px}
 
-body.pedal-mode .top-btn-pos-1{left:8px}
-body.pedal-mode .top-btn-pos-2{left:52px}
-body.pedal-mode .top-btn-pos-3{left:96px}
-body.pedal-mode .top-btn-pos-4{left:140px}
-body.pedal-mode .top-btn-pos-5{left:184px}
-body.pedal-mode .top-btn-pos-6{left:228px}
+body.pedal-mode .top-btn-pos-1{left:6px}
+body.pedal-mode .top-btn-pos-2{left:48px}
+body.pedal-mode .top-btn-pos-3{left:90px}
+body.pedal-mode .top-btn-pos-4{left:132px}
+body.pedal-mode .top-btn-pos-5{left:174px}
+body.pedal-mode .top-btn-pos-6{left:216px}
+body.pedal-mode .top-btn-pos-7{left:258px}
 
-.search-toggle, .quick-locate-btn, .stats-toggle-btn, .history-toggle-btn, .marker-toggle-btn, .layers-toggle-btn {
+.search-toggle, .quick-locate-btn, .stats-toggle-btn, .history-toggle-btn, .marker-toggle-btn, .layers-toggle-btn, .pip-toggle-btn {
   position:absolute;
   top:max(14px,env(safe-area-inset-top));
   z-index:1100;
   display:flex;
   align-items:center;
   justify-content:center;
-  width:44px;
-  height:44px;
-  min-height:44px;
+  width:42px;
+  height:42px;
+  min-height:42px;
   border:1px solid rgba(255,255,255,.7);
   border-radius:13px;
   padding:0;
   background:rgba(255,255,255,.96);
   color:#153b2b;
   font-weight:850;
-  font-size:18px;
+  font-size:17px;
   box-shadow:0 4px 18px rgba(0,0,0,.2);
   cursor:pointer;
 }
@@ -49,16 +51,40 @@ body.pedal-mode .quick-locate-btn,
 body.pedal-mode .stats-toggle-btn, 
 body.pedal-mode .history-toggle-btn, 
 body.pedal-mode .marker-toggle-btn, 
-body.pedal-mode .layers-toggle-btn {
+body.pedal-mode .layers-toggle-btn,
+body.pedal-mode .pip-toggle-btn {
   top:max(7px,env(safe-area-inset-top));
-  width:38px;
-  height:38px;
-  min-height:38px;
-  font-size:15px;
+  width:36px;
+  height:36px;
+  min-height:36px;
+  font-size:14px;
 }
 
-.search-toggle svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.search-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 .search-toggle[hidden]{display:none}
+
+/* Estilos da janela PiP quando o HUD estiver nela */
+.pip-body {
+  margin:0;
+  padding:12px;
+  background:#101b17;
+  color:#fff;
+  font-family:system-ui,-apple-system,sans-serif;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  box-sizing:border-box;
+}
+
+.pip-body .pedal-hud-bottom {
+  position:relative;
+  bottom:auto;
+  left:auto;
+  transform:none;
+  width:100%;
+  max-width:100%;
+}
 
 /* Painel de Estatísticas e Abas */
 .stats-panel{width:min(380px,calc(100vw - 24px));max-height:75vh}
@@ -114,7 +140,7 @@ input{min-width:0;flex:1;border:1px solid #d6e0da;border-radius:9px;padding:11px
 .saved-marker{font-size:20px;line-height:24px;text-align:center;text-shadow:0 1px 3px #fff}
 .saved-marker-popup .delete-saved-marker{margin-top:8px;border:0;border-radius:8px;padding:8px 12px;background:#b83232;color:#fff;font-weight:800;cursor:pointer}
 
-/* MODO PEDAL E INICIAR NA PARTE INFERIOR (LEVEMENTE ELEVADO) */
+/* MODO PEDAL E INICIAR NA PARTE INFERIOR */
 .pedal-hud-bottom{position:absolute;z-index:1600;bottom:max(32px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100vw - 20px);max-width:440px;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
 .pedal-hud-bottom > *{pointer-events:auto}
 

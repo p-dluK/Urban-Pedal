@@ -482,6 +482,64 @@ document.getElementById('acceptDeliveryBtn').addEventListener('click',acceptDeli
 document.getElementById('retireDeliveryBtn').addEventListener('click',retireDelivery);
 document.getElementById('deliverDeliveryBtn').addEventListener('click',deliverDelivery);
 
+// --- SUPORTE À JANELA FLUTUANTE (DOCUMENT PICTURE-IN-PICTURE API) ---
+let pipWindow = null;
+
+async function togglePipMode() {
+  if ('documentPictureInPicture' in window) {
+    if (pipWindow) {
+      pipWindow.close();
+      return;
+    }
+
+    try {
+      const hud = document.getElementById('pedalHudBottom');
+
+      // Solicita a abertura da janela flutuante
+      pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: 380,
+        height: 180,
+      });
+
+      // Copia todas as folhas de estilo da página principal para manter o visual na janela flutuante
+      [...document.styleSheets].forEach((styleSheet) => {
+        try {
+          const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+          const style = pipWindow.document.createElement('style');
+          style.textContent = cssRules;
+          pipWindow.document.head.appendChild(style);
+        } catch (e) {
+          const link = pipWindow.document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = styleSheet.href;
+          pipWindow.document.head.appendChild(link);
+        }
+      });
+
+      pipWindow.document.body.className = 'pip-body';
+      pipWindow.document.body.appendChild(hud);
+
+      // Quando a janela flutuante for fechada, devolve o painel para a página principal
+      pipWindow.addEventListener('unload', () => {
+        document.main ? document.main.appendChild(hud) : document.body.appendChild(hud);
+        pipWindow = null;
+        document.getElementById('pipBtn').style.background = 'rgba(255,255,255,.96)';
+        document.getElementById('pipBtn').style.color = '#153b2b';
+      });
+
+      document.getElementById('pipBtn').style.background = '#1685d6';
+      document.getElementById('pipBtn').style.color = '#fff';
+
+    } catch (err) {
+      alert('Não foi possível abrir a janela flutuante: ' + err.message);
+    }
+  } else {
+    alert('A Document Picture-in-Picture API não é suportada neste navegador (Requer Google Chrome / Edge no Desktop).');
+  }
+}
+
+document.getElementById('pipBtn').addEventListener('click', togglePipMode);
+
 (function restoreActiveRide(){
   const a=readStore('urban-pedal-active-v1',null);if(!a)return;
   rideCoords=a.coords||[];rideDistanceMeters=a.distance||0;rideElapsedBefore=a.elapsed||Math.max(0,Date.now()-(a.startedAt||Date.now()));
@@ -660,7 +718,7 @@ document.getElementById('closeHistory').onclick = () => document.getElementById(
 renderRideHistory();
 
 // --- PAINEL DE ESTATÍSTICAS E MÉTRICAS ---
-let currentStatsTab = 'day'; // 'day' ou 'week'
+let currentStatsTab = 'day';
 
 document.getElementById('statsToggleBtn').onclick = () => {
   renderStatsPanel();

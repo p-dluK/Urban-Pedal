@@ -16,7 +16,7 @@
   <!-- Mapa Fullscreen -->
   <div id="map" aria-label="Mapa interativo"></div>
 
-  <!-- Botões de Ação Superiores (Alinhados lado a lado) -->
+  <!-- Botões de Ação Superiores -->
   <button id="searchToggleBtn" class="search-toggle top-btn-pos-1" aria-label="Pesquisar endereço" title="Pesquisar endereço">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
   </button>
@@ -30,6 +30,9 @@
   <button id="markerModeBtn" class="marker-toggle-btn top-btn-pos-5" aria-label="Adicionar Marcador" title="Marcadores">📍</button>
 
   <button id="layersBtn" class="layers-toggle-btn top-btn-pos-6" aria-label="Altitude e Camadas" title="Altitude e Camadas">🗺️</button>
+
+  <!-- Botão de Janela Flutuante (PiP) -->
+  <button id="pipBtn" class="pip-toggle-btn top-btn-pos-7" aria-label="Modo Flutuante (PiP)" title="Janela Flutuante (PiP)">📌</button>
 
   <!-- Janela de pesquisa: recolhida por padrão -->
   <section class="floating-panel" id="searchPanel" hidden>
@@ -62,7 +65,7 @@
     <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
 
-  <!-- Menu de Camadas e Altitude (Ativado pelo botão do mapa 🗺️) -->
+  <!-- Menu de Camadas e Altitude -->
   <div id="layersMenu" class="mini-menu" hidden>
     <strong>CAMADAS & ALTITUDE</strong>
     <button id="heatBtn" class="tool-btn active" style="margin-top:8px;">🌡️ Mapa Térmico de Altitude</button>
@@ -71,7 +74,7 @@
     <label><input type="checkbox" id="baseToggle" checked> Mapa de ruas base</label>
   </div>
 
-  <!-- PAINEL DE ESTATÍSTICAS (ABAS DIA / SEMANA) -->
+  <!-- PAINEL DE ESTATÍSTICAS -->
   <section id="statsPanel" class="history-panel stats-panel" hidden>
     <div class="panel-header">
       <strong>DESEMPENHO & GANHOS</strong>
@@ -81,9 +84,7 @@
       <button id="tabDay" class="stat-tab active">Por Dia</button>
       <button id="tabWeek" class="stat-tab">Por Semana</button>
     </div>
-    <div id="statsContent" class="stats-content-body">
-      <!-- Preenchido dinamicamente via JS -->
-    </div>
+    <div id="statsContent" class="stats-content-body"></div>
   </section>
 
   <!-- PAINEL UNIFICADO NA PARTE INFERIOR (MODO PEDAL E BOTÃO INICIAR) -->
