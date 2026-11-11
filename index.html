@@ -16,28 +16,20 @@
   <!-- Mapa Fullscreen -->
   <div id="map" aria-label="Mapa interativo"></div>
 
-  <!-- Atalho para abrir a busca sem ocupar o mapa -->
-  <button id="searchToggleBtn" class="search-toggle" aria-label="Abrir pesquisa de endereço" title="Pesquisar endereço">
+  <!-- Botões de Ação Superiores (Alinhados lado a lado) -->
+  <button id="searchToggleBtn" class="search-toggle top-btn-pos-1" aria-label="Pesquisar endereço" title="Pesquisar endereço">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
   </button>
 
-  <!-- Botão de GPS fixo do lado de fora, ao lado da lupa -->
-  <button id="quickLocateBtn" class="quick-locate-btn" aria-label="Minha localização GPS" title="Minha localização GPS">📍</button>
+  <button id="quickLocateBtn" class="quick-locate-btn top-btn-pos-2" aria-label="Minha localização GPS" title="Centralizar GPS (Bicicleta)">🚲</button>
 
-  <!-- Botão de Estatísticas (Gráfico) -->
-  <button id="statsToggleBtn" class="stats-toggle-btn" aria-label="Estatísticas e Ganhos" title="Estatísticas de Entregas">📊</button>
+  <button id="statsToggleBtn" class="stats-toggle-btn top-btn-pos-3" aria-label="Estatísticas e Ganhos" title="Estatísticas">📊</button>
 
-  <!-- Botão de Bloqueio de Tela (Anti-toque acidental) -->
-  <button id="lockScreenBtn" class="lock-screen-btn" aria-label="Bloquear tela" title="Bloquear toques na tela">🔒</button>
+  <button id="historyBtn" class="history-toggle-btn top-btn-pos-4" aria-label="Histórico de Pedaladas" title="Histórico">📜</button>
 
-  <!-- Tela de Bloqueio Ativa -->
-  <div id="screenLockOverlay" class="screen-lock-overlay" hidden>
-    <div class="lock-box">
-      <span>🔒 TELA BLOQUEADA</span>
-      <small>Toque 3 vezes seguidas no botão abaixo para desbloquear</small>
-      <button id="unlockScreenBtn" class="unlock-action-btn">Desbloquear</button>
-    </div>
-  </div>
+  <button id="markerModeBtn" class="marker-toggle-btn top-btn-pos-5" aria-label="Adicionar Marcador" title="Marcadores">📍</button>
+
+  <button id="layersBtn" class="layers-toggle-btn top-btn-pos-6" aria-label="Altitude e Camadas" title="Altitude e Camadas">🗺️</button>
 
   <!-- Janela de pesquisa: recolhida por padrão -->
   <section class="floating-panel" id="searchPanel" hidden>
@@ -70,21 +62,13 @@
     <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
 
-  <!-- Ferramentas recolhidas no botão de engrenagem (Sem girar nem paisagem) -->
-  <div class="settings-wrap">
-    <button id="settingsToggleBtn" class="settings-toggle" aria-label="Abrir configurações" title="Configurações">⚙</button>
-    <div id="settingsMenu" class="settings-menu" hidden>
-      <button id="heatBtn" class="tool-btn active">🌡 Altitude</button>
-      <button id="layersBtn" class="tool-btn">Camadas</button>
-      <button id="markerModeBtn" class="tool-btn">📍 Marcador</button>
-      <button id="historyBtn" class="tool-btn">Histórico</button>
-    </div>
-  </div>
-
+  <!-- Menu de Camadas e Altitude (Ativado pelo botão do mapa 🗺️) -->
   <div id="layersMenu" class="mini-menu" hidden>
-    <label><input type="checkbox" id="streetDetailToggle" checked> Ruas detalhadas</label>
-    <label><input type="checkbox" id="heatToggle" checked> Mapa térmico</label>
-    <label><input type="checkbox" id="baseToggle" checked> Mapa de ruas</label>
+    <strong>CAMADAS & ALTITUDE</strong>
+    <button id="heatBtn" class="tool-btn active" style="margin-top:8px;">🌡️ Mapa Térmico de Altitude</button>
+    <label style="margin-top:8px;"><input type="checkbox" id="streetDetailToggle" checked> Ruas detalhadas</label>
+    <label><input type="checkbox" id="heatToggle" checked> Exibir camada térmica</label>
+    <label><input type="checkbox" id="baseToggle" checked> Mapa de ruas base</label>
   </div>
 
   <!-- PAINEL DE ESTATÍSTICAS (ABAS DIA / SEMANA) -->
@@ -104,7 +88,7 @@
 
   <!-- PAINEL UNIFICADO NA PARTE INFERIOR (MODO PEDAL E BOTÃO INICIAR) -->
   <div id="pedalHudBottom" class="pedal-hud-bottom">
-    <!-- Estado Inativo: Botão Iniciar com mesmas dimensões dos controles -->
+    <!-- Estado Inativo: Botão Iniciar -->
     <div id="startStateWrap" class="bottom-start-wrap">
       <button id="rideButton" class="bottom-btn start-big-btn">▶ INICIAR PEDALADA</button>
     </div>

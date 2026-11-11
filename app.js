@@ -40,11 +40,6 @@ let heatOn = true, origin = null, destination = null, currentElevation = null, s
 const $ = id => document.getElementById(id);
 const status = t => { if ($('status')) $('status').textContent = t; };
 
-$('settingsToggleBtn').addEventListener('click', () => {
-  const menu = $('settingsMenu'); menu.hidden = !menu.hidden;
-  $('settingsToggleBtn').setAttribute('aria-expanded', String(!menu.hidden));
-});
-
 $('searchToggleBtn').onclick = () => { $('searchPanel').hidden = false; $('searchToggleBtn').hidden = true; };
 $('closeSearchBtn').onclick = () => { $('searchPanel').hidden = true; $('searchToggleBtn').hidden = false; };
 
@@ -207,18 +202,6 @@ async function calculateRoute() {
     status('Rota calculada com sucesso.');
   } catch (e) { status('Não foi possível calcular: ' + e.message); }
 }
-
-$('heatBtn').onclick = () => {
-  heatOn = !heatOn;
-  $('heatBtn').classList.toggle('active', heatOn);
-  if (heatOn) map.addLayer(elevationLayer);
-  else map.removeLayer(elevationLayer);
-};
-
-$('layersBtn').onclick = () => {
-  if (map.hasLayer(topoMap)) { map.removeLayer(topoMap); street.addTo(map); }
-  else { map.removeLayer(street); topoMap.addTo(map); }
-};
 
 async function getElevation(p) {
   const key = p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
@@ -534,7 +517,14 @@ function renderSavedMarkers(){
     return {...m,layer:marker};
   });
 }
-document.getElementById('markerModeBtn').addEventListener('click',()=>{document.getElementById('markerMenu').hidden=!document.getElementById('markerMenu').hidden;});
+
+document.getElementById('markerModeBtn').addEventListener('click',()=>{
+  const m = document.getElementById('markerMenu');
+  m.hidden = !m.hidden;
+  document.getElementById('layersMenu').hidden = true;
+  document.getElementById('historyPanel').hidden = true;
+});
+
 document.querySelectorAll('[data-marker]').forEach(b=>b.addEventListener('click',()=>{window.markerMode=b.dataset.marker;document.getElementById('markerMenu').hidden=true;status('Toque no mapa para posicionar: '+markerTypes[window.markerMode].label+'.');}));
 document.getElementById('cancelMarker').addEventListener('click',()=>{window.markerMode=null;document.getElementById('markerMenu').hidden=true;});
 
@@ -548,7 +538,21 @@ map.on('click',e=>{
 });
 renderSavedMarkers();
 
-document.getElementById('layersBtn').addEventListener('click',()=>{const m=document.getElementById('layersMenu');m.hidden=!m.hidden;});
+// Abertura do menu de camadas e altitude pelo botão 🗺️
+document.getElementById('layersBtn').addEventListener('click',()=>{
+  const m=document.getElementById('layersMenu');
+  m.hidden=!m.hidden;
+  document.getElementById('markerMenu').hidden=true;
+  document.getElementById('historyPanel').hidden=true;
+});
+
+document.getElementById('heatBtn').onclick = () => {
+  heatOn = !heatOn;
+  document.getElementById('heatBtn').classList.toggle('active', heatOn);
+  if (heatOn) map.addLayer(elevationLayer);
+  else map.removeLayer(elevationLayer);
+};
+
 document.getElementById('streetDetailToggle').addEventListener('change',e=>e.target.checked?streetDetail.addTo(map):map.removeLayer(streetDetail));
 document.getElementById('heatToggle').addEventListener('change',e=>{heatOn=e.target.checked;document.getElementById('heatBtn').classList.toggle('active',heatOn);heatOn?elevationLayer.addTo(map):map.removeLayer(elevationLayer);});
 document.getElementById('baseToggle').addEventListener('change',e=>{if(map.hasLayer(topoMap))map.removeLayer(topoMap);if(map.hasLayer(street))map.removeLayer(street);(e.target.checked?street:topoMap).addTo(map);});
@@ -643,25 +647,17 @@ function renderRideHistory(){
     row.appendChild(view);box.appendChild(row);
   });
 }
-document.getElementById('historyBtn').addEventListener('click',()=>{renderRideHistory();document.getElementById('historyPanel').hidden=false;});
-document.getElementById('closeHistory').addEventListener('click',()=>document.getElementById('historyPanel').hidden=true);
+
+document.getElementById('historyBtn').addEventListener('click',()=>{
+  renderRideHistory();
+  const hp = document.getElementById('historyPanel');
+  hp.hidden = !hp.hidden;
+  document.getElementById('markerMenu').hidden = true;
+  document.getElementById('layersMenu').hidden = true;
+});
+
+document.getElementById('closeHistory').onclick = () => document.getElementById('historyPanel').hidden = true;
 renderRideHistory();
-
-// --- FUNCIONALIDADE DE BLOQUEIO DE TELA (ANTI-TOQUE) ---
-let unlockCounter = 0;
-document.getElementById('lockScreenBtn').onclick = () => {
-  document.getElementById('screenLockOverlay').hidden = false;
-  unlockCounter = 0;
-};
-
-document.getElementById('unlockScreenBtn').onclick = () => {
-  unlockCounter++;
-  if (unlockCounter >= 3) {
-    document.getElementById('screenLockOverlay').hidden = true;
-    unlockCounter = 0;
-    status('Tela desbloqueada.');
-  }
-};
 
 // --- PAINEL DE ESTATÍSTICAS E MÉTRICAS ---
 let currentStatsTab = 'day'; // 'day' ou 'week'
@@ -669,6 +665,9 @@ let currentStatsTab = 'day'; // 'day' ou 'week'
 document.getElementById('statsToggleBtn').onclick = () => {
   renderStatsPanel();
   document.getElementById('statsPanel').hidden = false;
+  document.getElementById('markerMenu').hidden = true;
+  document.getElementById('layersMenu').hidden = true;
+  document.getElementById('historyPanel').hidden = true;
 };
 
 document.getElementById('closeStats').onclick = () => {

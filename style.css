@@ -8,29 +8,57 @@ main{position:relative;width:100vw;height:100dvh;min-height:100%;overflow:hidden
 .street-detail{mix-blend-mode:multiply;filter:contrast(1.22) saturate(.72)}
 .leaflet-tile-pane{isolation:isolate}
 
-.search-toggle{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;padding:0;background:rgba(255,255,255,.96);color:#153b2b;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
+/* Posicionamento dinâmico dos 6 botões superiores em linha (lupa, bike, gráfico, histórico, marcador, mapa) */
+.top-btn-pos-1{left:14px}
+.top-btn-pos-2{left:66px}
+.top-btn-pos-3{left:118px}
+.top-btn-pos-4{left:170px}
+.top-btn-pos-5{left:222px}
+.top-btn-pos-6{left:274px}
+
+body.pedal-mode .top-btn-pos-1{left:8px}
+body.pedal-mode .top-btn-pos-2{left:52px}
+body.pedal-mode .top-btn-pos-3{left:96px}
+body.pedal-mode .top-btn-pos-4{left:140px}
+body.pedal-mode .top-btn-pos-5{left:184px}
+body.pedal-mode .top-btn-pos-6{left:228px}
+
+.search-toggle, .quick-locate-btn, .stats-toggle-btn, .history-toggle-btn, .marker-toggle-btn, .layers-toggle-btn {
+  position:absolute;
+  top:max(14px,env(safe-area-inset-top));
+  z-index:1100;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+  min-height:44px;
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:13px;
+  padding:0;
+  background:rgba(255,255,255,.96);
+  color:#153b2b;
+  font-weight:850;
+  font-size:18px;
+  box-shadow:0 4px 18px rgba(0,0,0,.2);
+  cursor:pointer;
+}
+
+body.pedal-mode .search-toggle, 
+body.pedal-mode .quick-locate-btn, 
+body.pedal-mode .stats-toggle-btn, 
+body.pedal-mode .history-toggle-btn, 
+body.pedal-mode .marker-toggle-btn, 
+body.pedal-mode .layers-toggle-btn {
+  top:max(7px,env(safe-area-inset-top));
+  width:38px;
+  height:38px;
+  min-height:38px;
+  font-size:15px;
+}
+
 .search-toggle svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 .search-toggle[hidden]{display:none}
-
-/* Botão de GPS rápido ao lado da lupa */
-.quick-locate-btn{position:absolute;top:max(14px,env(safe-area-inset-top));left:66px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;background:rgba(255,255,255,.96);color:#153b2b;font-weight:850;font-size:18px;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
-body.pedal-mode .quick-locate-btn{top:max(7px,env(safe-area-inset-top));left:54px;width:38px;height:38px;font-size:15px}
-
-/* Botão do Gráfico de Estatísticas */
-.stats-toggle-btn{position:absolute;top:max(14px,env(safe-area-inset-top));left:118px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;background:rgba(255,255,255,.96);color:#153b2b;font-weight:850;font-size:18px;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
-body.pedal-mode .stats-toggle-btn{top:max(7px,env(safe-area-inset-top));left:98px;width:38px;height:38px;font-size:15px}
-
-/* Botão de Bloqueio de Tela */
-.lock-screen-btn{position:absolute;top:max(14px,env(safe-area-inset-top));left:170px;z-index:1100;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.7);border-radius:13px;background:rgba(255,255,255,.96);color:#153b2b;font-weight:850;font-size:18px;box-shadow:0 4px 18px rgba(0,0,0,.2);cursor:pointer}
-body.pedal-mode .lock-screen-btn{top:max(7px,env(safe-area-inset-top));left:142px;width:38px;height:38px;font-size:15px}
-
-/* Tela de Bloqueio (Anti-toque) */
-.screen-lock-overlay{position:fixed;inset:0;z-index:9999;background:rgba(10,25,20,0.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;color:#fff;padding:20px;text-align:center}
-.screen-lock-overlay[hidden]{display:none!important}
-.lock-box{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:280px}
-.lock-box span{font-size:20px;font-weight:900;letter-spacing:1px}
-.lock-box small{font-size:12px;color:#a3b8ad;line-height:1.4}
-.unlock-action-btn{margin-top:15px;background:#1685d6;color:#fff;border:0;border-radius:14px;padding:14px 28px;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
 
 /* Painel de Estatísticas e Abas */
 .stats-panel{width:min(380px,calc(100vw - 24px));max-height:75vh}
@@ -73,28 +101,18 @@ input{min-width:0;flex:1;border:1px solid #d6e0da;border-radius:9px;padding:11px
 .elev-diff{border-top:1px solid #d6e7d9;padding-top:8px}
 .elev-diff strong{display:block;font-size:19px;color:#176b47;margin-top:3px}
 
-.settings-wrap{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;z-index:1500}
-.settings-toggle{width:44px;height:44px;border:1px solid rgba(255,255,255,.75);border-radius:13px;background:rgba(255,255,255,.96);color:#17392b;font-size:24px;font-weight:800;box-shadow:0 4px 16px #0003;cursor:pointer}
-.settings-menu{display:flex;flex-direction:column;align-items:stretch;gap:6px;position:absolute;right:0;top:52px;min-width:158px;padding:9px;border-radius:13px;background:rgba(255,255,255,.97);box-shadow:0 5px 20px #0004}
-.settings-menu[hidden]{display:none}
-.settings-menu .tool-btn{text-align:left;white-space:nowrap}
-.settings-menu #historyBtn{border:0;border-radius:10px;padding:8px 10px;min-height:34px;background:#edf3ef;color:#1c3028;font-size:11px;font-weight:800;text-align:left;box-shadow:none}
-
-.mini-menu{position:absolute;z-index:1300;right:170px;top:64px;min-width:175px;padding:10px;border-radius:12px;background:rgba(255,255,255,.97);box-shadow:0 5px 20px #0003;color:#18372a;font-size:12px}
+.mini-menu{position:absolute;z-index:1300;left:14px;top:64px;min-width:210px;padding:12px;border-radius:12px;background:rgba(255,255,255,.97);box-shadow:0 5px 20px #0003;color:#18372a;font-size:12px}
 .mini-menu[hidden],.history-panel[hidden]{display:none}
 .mini-menu label{display:flex;align-items:center;gap:7px;margin:7px 0;font-size:12px;letter-spacing:0;color:#25382e}
-.mini-menu button{display:block;width:100%;text-align:left;border:0;background:#f0f5f1;padding:8px;border-radius:7px;margin-top:5px;font-size:12px}
-.marker-menu{top:64px;right:170px;max-height:60vh;overflow:auto}
+.mini-menu button{display:block;width:100%;text-align:left;border:0;background:#f0f5f1;padding:8px;border-radius:7px;margin-top:5px;font-size:12px;cursor:pointer}
+.marker-menu{top:64px;left:14px;max-height:60vh;overflow:auto}
 
-.history-panel{position:absolute;z-index:1400;left:12px;top:108px;width:min(340px,calc(100vw - 24px));max-height:65vh;overflow:auto;background:#fffffff2;border-radius:14px;padding:12px;box-shadow:0 8px 28px #0004}
+.history-panel{position:absolute;z-index:1400;left:12px;top:64px;width:min(340px,calc(100vw - 24px));max-height:65vh;overflow:auto;background:#fffffff2;border-radius:14px;padding:12px;box-shadow:0 8px 28px #0004}
 .history-item{padding:10px;border-bottom:1px solid #e2e9e4;font-size:12px}
 .history-item button{margin-top:6px;border:0;border-radius:7px;padding:6px 9px;background:#e8f2eb;color:#185b3a;font-weight:800}
 
 .saved-marker{font-size:20px;line-height:24px;text-align:center;text-shadow:0 1px 3px #fff}
 .saved-marker-popup .delete-saved-marker{margin-top:8px;border:0;border-radius:8px;padding:8px 12px;background:#b83232;color:#fff;font-weight:800;cursor:pointer}
-
-body.pedal-mode .search-toggle{top:max(7px,env(safe-area-inset-top));left:8px;width:38px;height:38px;min-height:38px}
-body.pedal-mode .settings-wrap{top:max(7px,env(safe-area-inset-top));right:8px}
 
 /* MODO PEDAL E INICIAR NA PARTE INFERIOR (LEVEMENTE ELEVADO) */
 .pedal-hud-bottom{position:absolute;z-index:1600;bottom:max(32px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100vw - 20px);max-width:440px;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
