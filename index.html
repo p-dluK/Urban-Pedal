@@ -16,15 +16,30 @@
   <!-- Mapa Fullscreen -->
   <div id="map" aria-label="Mapa interativo"></div>
 
-  <!-- Atalho para abrir a busca sem ocupar o mapa -->
+  <!-- Atalho de busca -->
   <button id="searchToggleBtn" class="search-toggle" aria-label="Abrir pesquisa de endereço" title="Pesquisar endereço">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
   </button>
 
-  <!-- Botão de GPS fixo do lado de fora, ao lado da lupa -->
+  <!-- Botão de GPS rápido ao lado da lupa -->
   <button id="quickLocateBtn" class="quick-locate-btn" aria-label="Minha localização GPS" title="Minha localização GPS">📍</button>
 
-  <!-- Janela de pesquisa: recolhida por padrão -->
+  <!-- Botão de Estatísticas (Gráfico) -->
+  <button id="statsToggleBtn" class="stats-toggle-btn" aria-label="Estatísticas e Ganhos" title="Estatísticas de Entregas">📊</button>
+
+  <!-- Botão de Bloqueio de Tela (Anti-toque acidental) -->
+  <button id="lockScreenBtn" class="lock-screen-btn" aria-label="Bloquear tela" title="Bloquear toques na tela">🔒</button>
+
+  <!-- Tela de Bloqueio Ativa -->
+  <div id="screenLockOverlay" class="screen-lock-overlay" hidden>
+    <div class="lock-box">
+      <span>🔒 TELA BLOQUEADA</span>
+      <small>Toque 3 vezes seguidas no botão abaixo para desbloquear</small>
+      <button id="unlockScreenBtn" class="unlock-action-btn">Desbloquear</button>
+    </div>
+  </div>
+
+  <!-- Janela de pesquisa -->
   <section class="floating-panel" id="searchPanel" hidden>
     <div class="panel-header">
       <strong>ALTITUDE <span>BIKE GPS</span></strong>
@@ -55,7 +70,7 @@
     <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
 
-  <!-- Ferramentas recolhidas no botão de engrenagem (Sem girar nem paisagem) -->
+  <!-- Menu de configurações -->
   <div class="settings-wrap">
     <button id="settingsToggleBtn" class="settings-toggle" aria-label="Abrir configurações" title="Configurações">⚙</button>
     <div id="settingsMenu" class="settings-menu" hidden>
@@ -72,14 +87,26 @@
     <label><input type="checkbox" id="baseToggle" checked> Mapa de ruas</label>
   </div>
 
-  <!-- PAINEL UNIFICADO NA PARTE INFERIOR (MODO PEDAL E BOTÃO INICIAR) -->
+  <!-- PAINEL DE ESTATÍSTICAS (ABAS DIA / SEMANA) -->
+  <section id="statsPanel" class="history-panel stats-panel" hidden>
+    <div class="panel-header">
+      <strong>DESEMPENHO & GANHOS</strong>
+      <button id="closeStats" class="close-search">×</button>
+    </div>
+    <div class="stats-tabs">
+      <button id="tabDay" class="stat-tab active">Por Dia</button>
+      <button id="tabWeek" class="stat-tab">Por Semana</button>
+    </div>
+    <div id="statsContent" class="stats-content-body">
+      <!-- Preenchido dinamicamente via JS -->
+    </div>
+  </section>
+
+  <!-- PAINEL INFERIOR (MODO PEDAL E INICIAR) -->
   <div id="pedalHudBottom" class="pedal-hud-bottom">
-    <!-- Estado Inativo: Botão Iniciar com mesmas dimensões dos controles -->
     <div id="startStateWrap" class="bottom-start-wrap">
       <button id="rideButton" class="bottom-btn start-big-btn">▶ INICIAR PEDALADA</button>
     </div>
-
-    <!-- Estado Ativo: Cartão Estatístico + Botões Grandes de Ação -->
     <div id="activeStateWrap" class="bottom-active-wrap" hidden>
       <div class="ride-stats-card">
         <div class="stat-box">
@@ -92,7 +119,6 @@
           <div class="stat-values"><b id="rideDistanceDelivery">0,0 km</b> - <span id="rideTimeDelivery">0m</span></div>
         </div>
       </div>
-
       <div class="bottom-actions-row">
         <button id="endRideBtn" class="bottom-btn end-btn" title="Encerrar">■</button>
         <button id="acceptDeliveryBtn" class="bottom-btn accept-btn">ACEITEI</button>
