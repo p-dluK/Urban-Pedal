@@ -639,7 +639,7 @@ function renderRideHistory(){
     const deliveries=r.deliveries||[];
     
     const totalEarnings = deliveries.reduce((acc, d) => acc + (Number.isFinite(Number(d.value)) ? Number(d.value) : 0), 0);
-    const earningsText = totalEarnings > 0 ? ` · <b style="color:#176b47;">R$ ${totalEarnings.toFixed(2).replace('.',',')}</b>` : '';
+    const earningsText = totalEarnings > 0 ? ` · <b style="color:#4ea1ff;">R$ ${totalEarnings.toFixed(2).replace('.',',')}</b>` : '';
 
     row.innerHTML=`
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -732,7 +732,7 @@ function renderStatsPanel() {
   const rides = readStore(rideStoreKey, []);
   
   if (!rides.length) {
-    container.innerHTML = '<p style="text-align:center; color:#65736d; padding:20px;">Nenhuma pedalada registrada para calcular estatísticas.</p>';
+    container.innerHTML = '<p style="text-align:center; color:#9e9e9e; padding:20px;">Nenhuma pedalada registrada para calcular estatísticas.</p>';
     return;
   }
 
@@ -789,14 +789,14 @@ function renderStatsPanel() {
 
     html += `
       <div class="stat-card-item">
-        <strong style="font-size:13px; color:#102d25; border-bottom:1px solid #d4e8d8; padding-bottom:4px; display:block;">📅 ${period}</strong>
+        <strong style="font-size:12px; color:#fff; border-bottom:1px solid rgba(255,255,255,.12); padding-bottom:5px; display:block;">📅 ${period}</strong>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
           <div><small>Faturamento Total</small><b>R$ ${g.totalMoney.toFixed(2).replace('.',',')}</b></div>
           <div><small>Média por KM</small><b>R$ ${avgKm.replace('.',',')} / km</b></div>
           <div><small>Média por Entrega</small><b>R$ ${avgDel.replace('.',',')} / ped.</b></div>
           <div><small>Média por Hora</small><b>R$ ${avgHour.replace('.',',')} / h</b></div>
         </div>
-        <div style="margin-top:8px; border-top:1px dashed #d4e8d8; padding-top:6px;">
+        <div style="margin-top:8px; border-top:1px dashed rgba(255,255,255,.15); padding-top:6px;">
           <small>⚡ Horário mais lucrativo: <b>${bestHour}</b></small>
         </div>
       </div>
