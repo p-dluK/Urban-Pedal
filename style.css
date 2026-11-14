@@ -237,10 +237,10 @@ input:focus{outline:none;border-color:var(--uber-blue)}
   background:var(--uber-blue);
   color:#fff;
   width:auto;
-  min-width:180px;
-  padding:0 28px;
-  height:48px;
-  font-size:15px;
+  min-width:205px;
+  padding:0 34px;
+  height:56px;
+  font-size:17px;
   font-weight:800;
   letter-spacing:.8px;
   border-radius:999px;
@@ -249,7 +249,7 @@ input:focus{outline:none;border-color:var(--uber-blue)}
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:9px;
+  gap:10px;
 }
 
 .uber-go-dot{
@@ -284,14 +284,14 @@ input:focus{outline:none;border-color:var(--uber-blue)}
 .stat-values span{color:var(--uber-muted);font-size:12px}
 .stat-divider{width:1px;height:24px;background:var(--uber-border)}
 
-.bottom-actions-row{display:flex;align-items:center;gap:6px;width:100%}
+.bottom-actions-row{display:flex;align-items:center;gap:8px;width:100%}
 .bottom-btn{
   border:0;
-  border-radius:12px;
-  height:44px;
+  border-radius:14px;
+  height:54px;
   font-weight:800;
-  font-size:12px;
-  letter-spacing:.3px;
+  font-size:13.5px;
+  letter-spacing:.4px;
   cursor:pointer;
   box-shadow:0 4px 14px rgba(0,0,0,.3);
   transition:transform .12s ease, opacity .15s ease;
@@ -301,8 +301,8 @@ input:focus{outline:none;border-color:var(--uber-blue)}
 .accept-btn{background:var(--uber-blue);color:#fff;flex:1}
 .retire-btn{background:var(--uber-green);color:#fff;flex:1}
 .deliver-btn{background:var(--uber-amber);color:#111;flex:1.15}
-.end-btn{background:var(--uber-red);color:#fff;width:42px;font-size:15px;line-height:1}
-.pause-btn{background:var(--uber-card);color:var(--uber-text);width:42px;font-size:14px;line-height:1;border:1px solid var(--uber-border)}
+.end-btn{background:var(--uber-red);color:#fff;width:52px;font-size:18px;line-height:1}
+.pause-btn{background:var(--uber-card);color:var(--uber-text);width:52px;font-size:17px;line-height:1;border:1px solid var(--uber-border)}
 
 .bottom-btn:disabled{opacity:0.25;filter:grayscale(65%);cursor:not-allowed;box-shadow:none}
 
@@ -320,6 +320,6 @@ input:focus{outline:none;border-color:var(--uber-blue)}
 @media (max-width:420px){
   .uber-icon-btn{width:38px;height:38px}
   .uber-icon-btn svg{width:16px;height:16px}
-  .bottom-btn{height:42px;font-size:11px}
-  .end-btn, .pause-btn{width:40px}
+  .bottom-btn{height:50px;font-size:12.5px}
+  .end-btn, .pause-btn{width:48px}
 }

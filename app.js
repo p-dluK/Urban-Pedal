@@ -17,28 +17,11 @@ const map = L.map('map', {
 map.createPane('elevationPane');
 map.getPane('elevationPane').style.zIndex = 300;
 
-// Camadas de Mapas Base: OpenTopoMap, Tracestrack Topo, OSM Leisure Areas SA e Destaque Arborizado
+// Camada de Mapa Base Padrão: OpenTopoMap
 const topoMapLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
   maxZoom: 17,
   attribution: '© OpenTopoMap (CC-BY-SA)'
 }).addTo(map);
-
-const tracestrackLayer = L.tileLayer('https://tile.tracestrack.com/topo__/{z}/{x}/{y}.png?key=2d34a13582c885654e9020a79333c9c9', {
-  maxZoom: 18,
-  attribution: '© Tracestrack Topo | © OpenStreetMap contributors'
-});
-
-const leisureSALayer = L.tileLayer.wms('https://ows.mundialis.de/services/service?', {
-  layers: 'OSM-WMS',
-  format: 'image/png',
-  transparent: false,
-  attribution: '© OpenStreetMap Leisure Areas / Mundialis'
-});
-
-const greenNatureLayer = L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', {
-  maxZoom: 20,
-  attribution: '© Stadia Maps (Outdoors/Arborização) © OpenMapTiles © OpenStreetMap'
-});
 
 // Camada Térmica de Altitude (Terrarium) mantida rigorosamente intacta
 const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.78, pane: 'elevationPane' }).addTo(map);
@@ -644,23 +627,13 @@ document.getElementById('heatBtn').onclick = () => {
   else map.removeLayer(elevationLayer);
 };
 
-function setActiveLayer(layerToSet, activeBtnId) {
-  [topoMapLayer, tracestrackLayer, leisureSALayer, greenNatureLayer].forEach(l => {
-    if (map.hasLayer(l)) map.removeLayer(l);
-  });
-  layerToSet.addTo(map);
-  elevationLayer.bringToFront(); // Garante que a camada térmica permaneça perfeitamente sobre o mapa base
-
-  ['layerOpenTopo', 'layerTracestrack', 'layerLeisureSA', 'layerGreenNature'].forEach(id => {
-    document.getElementById(id).classList.remove('active');
-  });
-  document.getElementById(activeBtnId).classList.add('active');
-}
-
-document.getElementById('layerOpenTopo').onclick = () => setActiveLayer(topoMapLayer, 'layerOpenTopo');
-document.getElementById('layerTracestrack').onclick = () => setActiveLayer(tracestrackLayer, 'layerTracestrack');
-document.getElementById('layerLeisureSA').onclick = () => setActiveLayer(leisureSALayer, 'layerLeisureSA');
-document.getElementById('layerGreenNature').onclick = () => setActiveLayer(greenNatureLayer, 'layerGreenNature');
+document.getElementById('layerOpenTopo').onclick = () => {
+  if (!map.hasLayer(topoMapLayer)) {
+    topoMapLayer.addTo(map);
+  }
+  elevationLayer.bringToFront();
+  document.getElementById('layerOpenTopo').classList.add('active');
+};
 
 window.deleteRideRecord = function(rideId) {
   if (!confirm("Deseja realmente excluir esta pedalada do histórico?")) return;
