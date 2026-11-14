@@ -1,1 +1,1 @@
-const CACHE='urban-pedal-v21-uber-ui-ripple';
+const CACHE='urban-pedal-v22-nature-layers';
