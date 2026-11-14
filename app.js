@@ -14,31 +14,62 @@ const map = L.map('map', {
   maxZoom: 18
 }).setView([-23.512, -46.480], 13);
 
-map.createPane('streetDetailPane');
-map.getPane('streetDetailPane').style.zIndex = 250;
 map.createPane('elevationPane');
 map.getPane('elevationPane').style.zIndex = 300;
 
-const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '© OpenStreetMap contributors'
-}).addTo(map);
-
-const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+// Camadas de Mapas Base solicitadas: OpenTopoMap, OpenCycleMap, CyclOSM
+const topoMapLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
   maxZoom: 17,
   attribution: '© OpenTopoMap (CC-BY-SA)'
+}).addTo(map);
+
+const cycleMapLayer = L.tileLayer('https://{s}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=6170d4f794b64fb2886f499ff3672b15', {
+  maxZoom: 18,
+  attribution: '© Thunderforest, © OpenStreetMap contributors'
 });
 
-const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.78, pane: 'elevationPane' }).addTo(map);
+const cyclosmLayer = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.org/cyclosm/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© CyclOSM | © OpenStreetMap contributors'
+});
 
-const streetDetail = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19, attribution: '© OpenStreetMap contributors © CARTO', opacity: 0.78, className: 'street-detail', subdomains: 'abcd', pane: 'streetDetailPane'
-}).addTo(map);
+// Camada Térmica de Altitude (Terrarium) mantida rigorosamente intacta
+const elevationLayer = L.topoLayer({ range: [722, 820], opacity: 0.78, pane: 'elevationPane' }).addTo(map);
 
 let heatOn = true, origin = null, destination = null, currentElevation = null, selectedElevation = null, selectedPointMarker = null, elevationCache = new Map(), routeLine = null, userMarker = null, originMarker = null, destMarker = null, via = [], viaMarkers = [], choosingDest = false, watchId = null;
 
 const $ = id => document.getElementById(id);
 const status = t => { if ($('status')) $('status').textContent = t; };
+
+// --- GESTÃO DE TEMA (MODO CLARO / ESCURO) ---
+const savedTheme = localStorage.getItem('urban-pedal-theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
+$('themeToggleBtn').onclick = () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('urban-pedal-theme', next);
+};
+
+// --- ANIMAÇÃO RIPPLE (ONDA DE SOMBRA ESTILO MOTOROLA) ---
+document.addEventListener('pointerdown', e => {
+  const btn = e.target.closest('.ripple-btn');
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const circle = document.createElement('span');
+  const diameter = Math.max(rect.width, rect.height);
+  const radius = diameter / 2;
+  circle.style.width = circle.style.height = `${diameter}px`;
+  circle.style.left = `${e.clientX - rect.left - radius}px`;
+  circle.style.top = `${e.clientY - rect.top - radius}px`;
+  circle.classList.add('ripple-effect');
+  
+  const existing = btn.querySelector('.ripple-effect');
+  if (existing) existing.remove();
+  btn.appendChild(circle);
+  setTimeout(() => circle.remove(), 500);
+});
 
 // --- CONTROLE DE JANELAS / MENUS EXCLUSIVOS ---
 const searchPanel = $('searchPanel');
@@ -59,9 +90,7 @@ function closeAllPanels() {
 $('searchToggleBtn').onclick = () => {
   const isOpen = !searchPanel.hidden;
   closeAllPanels();
-  if (!isOpen) {
-    searchPanel.hidden = false;
-  }
+  if (!isOpen) searchPanel.hidden = false;
 };
 $('closeSearchBtn').onclick = () => { searchPanel.hidden = true; };
 
@@ -91,21 +120,17 @@ $('closeHistory').onclick = () => { historyPanel.hidden = true; };
 $('markerModeBtn').onclick = () => {
   const isOpen = !markerMenu.hidden;
   closeAllPanels();
-  if (!isOpen) {
-    markerMenu.hidden = false;
-  }
+  if (!isOpen) markerMenu.hidden = false;
 };
 
-// 5. Camadas e Altitude
+// 5. Camadas e Mapas
 $('layersBtn').onclick = () => {
   const isOpen = !layersMenu.hidden;
   closeAllPanels();
-  if (!isOpen) {
-    layersMenu.hidden = false;
-  }
+  if (!isOpen) layersMenu.hidden = false;
 };
 
-// 6. Botão de Limpar Rota (substituindo o PiP)
+// 6. Botão de Limpar Rota
 $('clearRouteBtn').onclick = () => {
   closeAllPanels();
   clearCurrentRoute();
@@ -307,7 +332,6 @@ function updateElevationDifference() {
   if (currentElevation === null || selectedElevation === null) return;
   const d = selectedElevation - currentElevation, s = d > 0 ? '+' : '';
   $('elevDiff').textContent = s + d + ' m ' + (d > 0 ? 'acima' : d < 0 ? 'abaixo' : 'na mesma altitude');
-  $('elevDiff').style.color = d > 0 ? '#b65b24' : d < 0 ? '#176b47' : '#52645a';
 }
 
 const rideStoreKey = 'urban-pedal-rides-v1';
@@ -605,6 +629,7 @@ map.on('click',e=>{
 });
 renderSavedMarkers();
 
+// --- LÓGICA DE CAMADAS DE MAPA ---
 document.getElementById('heatBtn').onclick = () => {
   heatOn = !heatOn;
   document.getElementById('heatBtn').classList.toggle('active', heatOn);
@@ -612,9 +637,22 @@ document.getElementById('heatBtn').onclick = () => {
   else map.removeLayer(elevationLayer);
 };
 
-document.getElementById('streetDetailToggle').addEventListener('change',e=>e.target.checked?streetDetail.addTo(map):map.removeLayer(streetDetail));
-document.getElementById('heatToggle').addEventListener('change',e=>{heatOn=e.target.checked;document.getElementById('heatBtn').classList.toggle('active',heatOn);heatOn?elevationLayer.addTo(map):map.removeLayer(elevationLayer);});
-document.getElementById('baseToggle').addEventListener('change',e=>{if(map.hasLayer(topoMap))map.removeLayer(topoMap);if(map.hasLayer(street))map.removeLayer(street);(e.target.checked?street:topoMap).addTo(map);});
+function setActiveLayer(layerToSet, activeBtnId) {
+  [topoMapLayer, cycleMapLayer, cyclosmLayer].forEach(l => {
+    if (map.hasLayer(l)) map.removeLayer(l);
+  });
+  layerToSet.addTo(map);
+  elevationLayer.bringToFront(); // Garante que a camada térmica permaneça perfeitamente sobre o mapa base
+
+  ['layerOpenTopo', 'layerOpenCycle', 'layerCyclOSM'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+  document.getElementById(activeBtnId).classList.add('active');
+}
+
+document.getElementById('layerOpenTopo').onclick = () => setActiveLayer(topoMapLayer, 'layerOpenTopo');
+document.getElementById('layerOpenCycle').onclick = () => setActiveLayer(cycleMapLayer, 'layerOpenCycle');
+document.getElementById('layerCyclOSM').onclick = () => setActiveLayer(cyclosmLayer, 'layerCyclOSM');
 
 window.deleteRideRecord = function(rideId) {
   if (!confirm("Deseja realmente excluir esta pedalada do histórico?")) return;
@@ -632,22 +670,25 @@ function eventIcon(emoji){return L.divIcon({className:'ride-event-marker',html:e
 function renderRideHistory(){
   const box=document.getElementById('historyList'),rides=readStore(rideStoreKey,[]);
   if(!box)return;
-  box.innerHTML=rides.length?'':'<p>Nenhuma pedalada salva ainda.</p>';
+  box.innerHTML=rides.length?'':'<p style="text-align:center; color:var(--uber-muted); padding:16px;">Nenhuma pedalada salva ainda.</p>';
   rides.forEach(r=>{
     const row=document.createElement('div');row.className='history-item';
     const date=new Date(r.date).toLocaleString('pt-BR');
     const deliveries=r.deliveries||[];
     
     const totalEarnings = deliveries.reduce((acc, d) => acc + (Number.isFinite(Number(d.value)) ? Number(d.value) : 0), 0);
-    const earningsText = totalEarnings > 0 ? ` · <b style="color:#4ea1ff;">R$ ${totalEarnings.toFixed(2).replace('.',',')}</b>` : '';
+    const earningsText = totalEarnings > 0 ? ` · <b style="color:var(--uber-blue);">R$ ${totalEarnings.toFixed(2).replace('.',',')}</b>` : '';
+
+    // Ícone de lixeira idêntico ao de limpar rota
+    const trashSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
     row.innerHTML=`
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div>
-          <b>${(r.distance/1000).toFixed(2)} km total</b> · ${fmtTime(r.duration)}${earningsText}<br>
-          <small>${date}</small>
+          <b style="font-size:13px;">${(r.distance/1000).toFixed(2)} km total</b> · ${fmtTime(r.duration)}${earningsText}<br>
+          <small style="color:var(--uber-muted);">${date}</small>
         </div>
-        <button onclick="deleteRideRecord(${r.id})" style="border:0; background:transparent; color:#d92d20; font-size:16px; cursor:pointer; padding:2px 6px;" title="Excluir pedalada">🗑️</button>
+        <button onclick="deleteRideRecord(${r.id})" class="ripple-btn" style="border:0; background:var(--uber-card); color:var(--uber-red); border:1px solid var(--uber-border); border-radius:8px; font-size:12px; cursor:pointer; padding:6px 10px; display:inline-flex; align-items:center;" title="Excluir pedalada">${trashSvg} Excluir</button>
       </div>
       <div class="history-deliveries"></div>
     `;
@@ -668,7 +709,7 @@ function renderRideHistory(){
       const label=document.createElement('span');
       label.innerHTML=`Entrega ${i+1} · ${accepted} → ${delivered} ${kmText ? `<b>(${kmText})</b>` : ''}`;
       
-      const money=document.createElement('button');money.className='delivery-value';money.textContent=d.value==null?'$':`$ ${Number(d.value).toFixed(2).replace('.',',')}`;money.title='Adicionar ou editar valor da corrida';
+      const money=document.createElement('button');money.className='delivery-value ripple-btn';money.textContent=d.value==null?'$':`$ ${Number(d.value).toFixed(2).replace('.',',')}`;money.title='Adicionar ou editar valor da corrida';
       money.onclick=()=>{
         const raw=prompt('Valor recebido nesta entrega (R$):',d.value==null?'':String(d.value).replace('.',','));
         if(raw===null)return;
@@ -692,7 +733,7 @@ function renderRideHistory(){
       item.append(label,money);list.appendChild(item);
     });
     
-    const view=document.createElement('button');view.textContent='Ver trajeto';view.onclick=()=>{
+    const view=document.createElement('button');view.className='ripple-btn';view.textContent='Ver trajeto no mapa';view.onclick=()=>{
       if(window.historyRoute)map.removeLayer(window.historyRoute);
       if(window.historyEventMarkers)window.historyEventMarkers.forEach(m=>map.removeLayer(m));
       window.historyEventMarkers=[];
@@ -732,7 +773,7 @@ function renderStatsPanel() {
   const rides = readStore(rideStoreKey, []);
   
   if (!rides.length) {
-    container.innerHTML = '<p style="text-align:center; color:#9e9e9e; padding:20px;">Nenhuma pedalada registrada para calcular estatísticas.</p>';
+    container.innerHTML = '<p style="text-align:center; color:var(--uber-muted); padding:20px;">Nenhuma pedalada registrada para calcular estatísticas.</p>';
     return;
   }
 
@@ -789,14 +830,14 @@ function renderStatsPanel() {
 
     html += `
       <div class="stat-card-item">
-        <strong style="font-size:12px; color:#fff; border-bottom:1px solid rgba(255,255,255,.12); padding-bottom:5px; display:block;">📅 ${period}</strong>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
+        <strong style="font-size:13px; color:var(--uber-text); border-bottom:1px solid var(--uber-border); padding-bottom:6px; display:block;">📅 ${period}</strong>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
           <div><small>Faturamento Total</small><b>R$ ${g.totalMoney.toFixed(2).replace('.',',')}</b></div>
           <div><small>Média por KM</small><b>R$ ${avgKm.replace('.',',')} / km</b></div>
           <div><small>Média por Entrega</small><b>R$ ${avgDel.replace('.',',')} / ped.</b></div>
           <div><small>Média por Hora</small><b>R$ ${avgHour.replace('.',',')} / h</b></div>
         </div>
-        <div style="margin-top:8px; border-top:1px dashed rgba(255,255,255,.15); padding-top:6px;">
+        <div style="margin-top:10px; border-top:1px dashed var(--uber-border); padding-top:8px;">
           <small>⚡ Horário mais lucrativo: <b>${bestHour}</b></small>
         </div>
       </div>

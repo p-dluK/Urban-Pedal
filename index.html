@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -16,33 +16,38 @@
   <!-- Mapa Fullscreen -->
   <div id="map" aria-label="Mapa interativo"></div>
 
-  <!-- Barra Superior Estilo Uber Driver (Botões circulares compactos e discretos) -->
+  <!-- Barra Superior Estilo Uber Driver (Com botão de Tema Claro/Escuro adicionado) -->
   <div class="uber-top-bar">
-    <button id="searchToggleBtn" class="uber-icon-btn" aria-label="Pesquisar endereço" title="Pesquisar endereço">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+    <button id="themeToggleBtn" class="uber-icon-btn ripple-btn" aria-label="Alternar Modo Claro/Escuro" title="Alternar Tema">
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
     </button>
 
-    <button id="quickLocateBtn" class="uber-icon-btn" aria-label="Minha localização GPS" title="Centralizar GPS">
+    <button id="searchToggleBtn" class="uber-icon-btn ripple-btn" aria-label="Pesquisar endereço" title="Pesquisar endereço">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>
+    </button>
+
+    <button id="quickLocateBtn" class="uber-icon-btn ripple-btn" aria-label="Minha localização GPS" title="Centralizar GPS">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
     </button>
 
-    <button id="statsToggleBtn" class="uber-icon-btn" aria-label="Estatísticas e Ganhos" title="Ganhos e Estatísticas">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+    <button id="statsToggleBtn" class="uber-icon-btn ripple-btn" aria-label="Estatísticas e Ganhos" title="Ganhos e Estatísticas">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"></path><path d="M6 15l4-4 4 4 4-7"></path></svg>
     </button>
 
-    <button id="historyBtn" class="uber-icon-btn" aria-label="Histórico de Pedaladas" title="Histórico">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+    <button id="historyBtn" class="uber-icon-btn ripple-btn" aria-label="Histórico de Pedaladas" title="Histórico">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
     </button>
 
-    <button id="markerModeBtn" class="uber-icon-btn" aria-label="Adicionar Marcador" title="Alertas no Mapa">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+    <button id="markerModeBtn" class="uber-icon-btn ripple-btn" aria-label="Adicionar Marcador" title="Alertas no Mapa">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"></path><circle cx="12" cy="9" r="2.5"></circle></svg>
     </button>
 
-    <button id="layersBtn" class="uber-icon-btn" aria-label="Altitude e Camadas" title="Camadas e Altitude">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+    <button id="layersBtn" class="uber-icon-btn ripple-btn" aria-label="Altitude e Camadas" title="Camadas e Altitude">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline></svg>
     </button>
 
-    <button id="clearRouteBtn" class="uber-icon-btn uber-icon-danger" aria-label="Limpar rota atual" title="Limpar rota">
+    <button id="clearRouteBtn" class="uber-icon-btn uber-icon-danger ripple-btn" aria-label="Limpar rota atual" title="Limpar rota">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
     </button>
   </div>
@@ -52,21 +57,21 @@
     <div class="panel-header">
       <strong>URBAN <span>PEDAL</span></strong>
       <div class="panel-header-actions">
-        <button id="closeSearchBtn" class="close-search" title="Recolher pesquisa" aria-label="Recolher pesquisa">×</button>
+        <button id="closeSearchBtn" class="close-search ripple-btn" title="Recolher pesquisa" aria-label="Recolher pesquisa">×</button>
       </div>
     </div>
     <div class="field">
       <label for="origin">PONTO A · ORIGEM</label>
-      <div class="inputrow"><input id="origin" placeholder="Use minha localização ou toque no mapa"><button id="originHere" class="smallbtn">GPS</button></div>
+      <div class="inputrow"><input id="origin" placeholder="Use minha localização ou toque no mapa"><button id="originHere" class="smallbtn ripple-btn">GPS</button></div>
     </div>
-    <div class="field" style="margin-top:8px;">
+    <div class="field" style="margin-top:10px;">
       <label for="destination">PONTO B · DESTINO</label>
-      <div class="inputrow"><input id="destination" placeholder="Digite um endereço ou local"><button id="pickDest" class="smallbtn">MAPA</button></div>
+      <div class="inputrow"><input id="destination" placeholder="Digite um endereço ou local"><button id="pickDest" class="smallbtn ripple-btn">MAPA</button></div>
       <div id="suggestions" class="suggestions"></div>
     </div>
-    <div class="actions" style="margin-top:12px;">
-      <button id="routeBtn" class="primary">CALCULAR ROTA</button>
-      <button id="clearBtn" class="secondary">LIMPAR</button>
+    <div class="actions" style="margin-top:14px;">
+      <button id="routeBtn" class="primary ripple-btn">CALCULAR ROTA</button>
+      <button id="clearBtn" class="secondary ripple-btn">LIMPAR</button>
     </div>
     <div id="status" class="status">Pronto. Defina origem e destino para começar.</div>
     <div id="routeInfo" class="route-info" hidden></div>
@@ -78,24 +83,25 @@
     <div class="hint">Dica: depois de calcular, toque em uma rua para inserir um ponto intermediário.</div>
   </section>
 
-  <!-- Menu de Camadas e Altitude -->
+  <!-- Menu de Camadas e Altitude (Atualizado conforme solicitado) -->
   <div id="layersMenu" class="mini-menu" hidden>
-    <strong>CAMADAS & ALTITUDE</strong>
-    <button id="heatBtn" class="tool-btn active" style="margin-top:8px;">🌡️ Mapa Térmico de Altitude</button>
-    <label style="margin-top:8px;"><input type="checkbox" id="streetDetailToggle" checked> Ruas detalhadas</label>
-    <label><input type="checkbox" id="heatToggle" checked> Exibir camada térmica</label>
-    <label><input type="checkbox" id="baseToggle" checked> Mapa de ruas base</label>
+    <strong>CAMADAS & MAPAS</strong>
+    <button id="heatBtn" class="tool-btn active ripple-btn" style="margin-top:8px;">🌡️ Camada Térmica (Terrarium)</button>
+    <div class="layer-section-title" style="margin-top:12px;">ESTILOS DE MAPA BASE</div>
+    <button id="layerOpenTopo" class="tool-btn active ripple-btn">🗺️ OpenTopoMap</button>
+    <button id="layerOpenCycle" class="tool-btn ripple-btn">🚴 OpenCycleMap</button>
+    <button id="layerCyclOSM" class="tool-btn ripple-btn">🚲 CyclOSM</button>
   </div>
 
   <!-- PAINEL DE ESTATÍSTICAS -->
   <section id="statsPanel" class="history-panel stats-panel" hidden>
     <div class="panel-header">
       <strong>DESEMPENHO & GANHOS</strong>
-      <button id="closeStats" class="close-search">×</button>
+      <button id="closeStats" class="close-search ripple-btn">×</button>
     </div>
     <div class="stats-tabs">
-      <button id="tabDay" class="stat-tab active">Por Dia</button>
-      <button id="tabWeek" class="stat-tab">Por Semana</button>
+      <button id="tabDay" class="stat-tab active ripple-btn">Por Dia</button>
+      <button id="tabWeek" class="stat-tab ripple-btn">Por Semana</button>
     </div>
     <div id="statsContent" class="stats-content-body"></div>
   </section>
@@ -104,7 +110,7 @@
   <div id="pedalHudBottom" class="pedal-hud-bottom">
     <!-- Estado Inativo: Botão Iniciar estilo Pílula "INICIAR" -->
     <div id="startStateWrap" class="bottom-start-wrap">
-      <button id="rideButton" class="bottom-btn start-big-btn">
+      <button id="rideButton" class="bottom-btn start-big-btn ripple-btn">
         <span class="uber-go-dot"></span> INICIAR
       </button>
     </div>
@@ -124,28 +130,28 @@
       </div>
 
       <div class="bottom-actions-row">
-        <button id="endRideBtn" class="bottom-btn end-btn" title="Encerrar">■</button>
-        <button id="acceptDeliveryBtn" class="bottom-btn accept-btn">ACEITEI</button>
-        <button id="retireDeliveryBtn" class="bottom-btn retire-btn">RETIREI</button>
-        <button id="deliverDeliveryBtn" class="bottom-btn deliver-btn">ENTREGUEI</button>
-        <button id="pauseRideBtn" class="bottom-btn pause-btn" title="Pausar">Ⅱ</button>
+        <button id="endRideBtn" class="bottom-btn end-btn ripple-btn" title="Encerrar">■</button>
+        <button id="acceptDeliveryBtn" class="bottom-btn accept-btn ripple-btn">ACEITEI</button>
+        <button id="retireDeliveryBtn" class="bottom-btn retire-btn ripple-btn">RETIREI</button>
+        <button id="deliverDeliveryBtn" class="bottom-btn deliver-btn ripple-btn">ENTREGUEI</button>
+        <button id="pauseRideBtn" class="bottom-btn pause-btn ripple-btn" title="Pausar">Ⅱ</button>
       </div>
     </div>
   </div>
 
   <div id="markerMenu" class="mini-menu marker-menu" hidden>
     <strong>Adicionar marcador</strong>
-    <p style="color:#9e9e9e;margin:4px 0 8px;">Toque em uma categoria e depois no ponto do mapa.</p>
-    <button data-marker="hole">🕳️ Buraco</button>
-    <button data-marker="danger">⚠️ Rua perigosa</button>
-    <button data-marker="hill">⛰️ Ladeira</button>
-    <button data-marker="stairs">🚧 Escadaria</button>
-    <button data-marker="avoid">🚫 Não quero ir</button>
-    <button id="cancelMarker" style="background:#2a2a2a;color:#ccc;margin-top:8px;">Cancelar</button>
+    <p style="margin:6px 0 10px;">Toque em uma categoria e depois no ponto do mapa.</p>
+    <button data-marker="hole" class="ripple-btn">🕳️ Buraco</button>
+    <button data-marker="danger" class="ripple-btn">⚠️ Rua perigosa</button>
+    <button data-marker="hill" class="ripple-btn">⛰️ Ladeira</button>
+    <button data-marker="stairs" class="ripple-btn">🚧 Escadaria</button>
+    <button data-marker="avoid" class="ripple-btn">🚫 Não quero ir</button>
+    <button id="cancelMarker" class="ripple-btn" style="background:var(--uber-card);color:var(--uber-text);margin-top:10px;border:1px solid var(--uber-border);">Cancelar</button>
   </div>
 
   <section id="historyPanel" class="history-panel" hidden>
-    <div class="panel-header"><strong>HISTÓRICO DE PEDALADAS</strong><button id="closeHistory" class="close-search">×</button></div>
+    <div class="panel-header"><strong>HISTÓRICO DE PEDALADAS</strong><button id="closeHistory" class="close-search ripple-btn">×</button></div>
     <div id="historyList"></div>
   </section>
 
